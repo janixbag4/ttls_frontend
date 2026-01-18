@@ -1,24 +1,111 @@
-import logo from './logo.svg';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import AdminDashboard from './components/Admin/AdminDashboard';
+import TeacherDashboard from './components/Teacher/TeacherDashboard';
+import StudentDashboard from './components/Student/StudentDashboard';
+import Home from './components/Home/Home';
+import InstallPWA from './components/InstallPWA'; // ADD THIS
 import './App.css';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const savedMode = localStorage.getItem('darkMode');
+    return savedMode ? JSON.parse(savedMode) : true; // Default to dark mode
+  });
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, [darkMode]);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('user');
+  };
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+        <InstallPWA /> {/* ADD THIS */}
+        <Routes>
+          <Route 
+            path="/" 
+            element={
+              isAuthenticated ? 
+              <Navigate to={`/${user?.role}`} /> : 
+              <Home onLogin={handleLogin} />
+            } 
+          />
+          <Route 
+            path="/login" 
+            element={
+              isAuthenticated ? 
+              <Navigate to={`/${user?.role}`} /> : 
+              <Home onLogin={handleLogin} initialPanel="login" />
+            } 
+          />
+          <Route 
+            path="/signup" 
+            element={
+              isAuthenticated ? 
+              <Navigate to={`/${user?.role}`} /> : 
+              <Home onLogin={handleLogin} initialPanel="signup" />
+            } 
+          />
+          
+          <Route 
+            path="/admin/*" 
+            element={
+              isAuthenticated && user?.role === 'admin' ? 
+              <AdminDashboard user={user} onLogout={handleLogout} darkMode={darkMode} toggleDarkMode={toggleDarkMode} /> : 
+              <Navigate to="/" />
+            } 
+          />
+          <Route 
+            path="/teacher/*" 
+            element={
+              isAuthenticated && user?.role === 'teacher' ? 
+              <TeacherDashboard user={user} onLogout={handleLogout} darkMode={darkMode} toggleDarkMode={toggleDarkMode} /> : 
+              <Navigate to="/" />
+            } 
+          />
+          <Route 
+            path="/student/*" 
+            element={
+              isAuthenticated && user?.role === 'student' ? 
+              <StudentDashboard user={user} onLogout={handleLogout} darkMode={darkMode} toggleDarkMode={toggleDarkMode} /> : 
+              <Navigate to="/" />
+            } 
+          />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
