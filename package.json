@@ -47,4 +47,8 @@
     "react-app-rewired": "^2.2.1",
     "workbox-webpack-plugin": "^7.4.0"
   }
+  ,
+  "engines": {
+    "node": "20.x"
+  }
 }
