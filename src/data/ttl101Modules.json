@@ -1,0 +1,126 @@
+{
+  "course": {
+    "id": "TTL101",
+    "title": "Technology for Teaching and Learning 1",
+    "description": "Foundational course on integrating technology in teaching and learning",
+    "modules": [
+      {
+        "id": 1,
+        "number": 1,
+        "title": "Teaching and Learning with Technology: An Introduction",
+        "description": "Introduction to the role of technology in modern education",
+        "objectives": [
+          "Understand the fundamentals of technology in education",
+          "Recognize the importance of ICT in 21st-century learning",
+          "Identify key concepts in technology-enhanced learning"
+        ],
+        "duration": "2 weeks",
+        "status": "available"
+      },
+      {
+        "id": 2,
+        "number": 2,
+        "title": "ICT Policies and Issues: Implications to Teaching and Learning",
+        "description": "Exploring ICT policies and their impact on educational practices",
+        "objectives": [
+          "Analyze ICT policies affecting education",
+          "Understand policy implications for teaching and learning",
+          "Apply policies in educational contexts"
+        ],
+        "duration": "2 weeks",
+        "status": "available"
+      },
+      {
+        "id": 3,
+        "number": 3,
+        "title": "Non-digital and Digital Skills and Tools in Delivering Technology Enhanced Lessons",
+        "description": "Development of skills for using both digital and non-digital tools in teaching",
+        "objectives": [
+          "Master digital tools for education",
+          "Understand non-digital alternatives",
+          "Create technology-enhanced lesson plans"
+        ],
+        "duration": "3 weeks",
+        "status": "available"
+      },
+      {
+        "id": 4,
+        "number": 4,
+        "title": "Social Ethical and Legal Responsibilities in the Use of Technology Tools and Resources",
+        "description": "Understanding ethical considerations in educational technology use",
+        "objectives": [
+          "Recognize social implications of technology use",
+          "Apply ethical principles in technology integration",
+          "Comply with legal requirements for educational technology"
+        ],
+        "duration": "2 weeks",
+        "status": "available"
+      },
+      {
+        "id": 5,
+        "number": 5,
+        "title": "Theories and Principles in the Use and Design of Technology Driven Lessons",
+        "description": "Theoretical foundations for technology-integrated instruction",
+        "objectives": [
+          "Understand learning theories related to technology",
+          "Apply design principles to technology-enhanced lessons",
+          "Evaluate lesson designs based on theoretical frameworks"
+        ],
+        "duration": "3 weeks",
+        "status": "available"
+      },
+      {
+        "id": 6,
+        "number": 6,
+        "title": "Innovative Technologies for Assessment Tasks in Teaching and Learning",
+        "description": "Using emerging technologies for educational assessment",
+        "objectives": [
+          "Identify innovative assessment tools",
+          "Design technology-enhanced assessments",
+          "Analyze assessment data using technology"
+        ],
+        "duration": "2 weeks",
+        "status": "available"
+      },
+      {
+        "id": 7,
+        "number": 7,
+        "title": "Universal Design for Learning (UDL)",
+        "description": "Creating inclusive learning environments through technology",
+        "objectives": [
+          "Understand UDL principles",
+          "Design inclusive technology-enhanced lessons",
+          "Support diverse learners through technology"
+        ],
+        "duration": "2 weeks",
+        "status": "available"
+      },
+      {
+        "id": 8,
+        "number": 8,
+        "title": "Producing Learning Resources Using Technology Tools",
+        "description": "Creating educational resources with digital tools",
+        "objectives": [
+          "Develop multimedia learning resources",
+          "Use authoring tools effectively",
+          "Evaluate resource quality and effectiveness"
+        ],
+        "duration": "3 weeks",
+        "status": "available"
+      },
+      {
+        "id": 9,
+        "number": 9,
+        "title": "Integrating Active Learning Approaches in Language-Learning",
+        "description": "Using technology to support active and interactive language learning",
+        "objectives": [
+          "Understand active learning principles",
+          "Integrate technology in language instruction",
+          "Create engaging language learning experiences"
+        ],
+        "duration": "2 weeks",
+        "status": "available"
+      }
+    ]
+  }
+}

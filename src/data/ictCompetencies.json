@@ -1,0 +1,146 @@
+{
+  "domains": [
+    {
+      "id": 1,
+      "name": "Understanding ICT in Education",
+      "competencies": [
+        {
+          "id": 1.1,
+          "title": "Demonstrate awareness of policies affecting ICT in education",
+          "description": "Teachers should be aware of national and institutional ICT policies"
+        },
+        {
+          "id": 1.2,
+          "title": "Comply with ICT policies as they affect teaching-learning",
+          "description": "Apply ICT policies in day-to-day teaching and learning activities"
+        },
+        {
+          "id": 1.3,
+          "title": "Contextualizes ICT policies to the learning environment",
+          "description": "Adapt ICT policies to fit specific classroom and institutional contexts"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Curriculum and Assessment",
+      "competencies": [
+        {
+          "id": 2.1,
+          "title": "Demonstrate understanding of concepts, principles and theories of ICT system as they apply to teaching-learning",
+          "description": "Understand ICT frameworks and their application in education"
+        },
+        {
+          "id": 2.2,
+          "title": "Evaluate digital and non-digital learning resources in response to student's diverse needs",
+          "description": "Critically assess resources for diverse learners"
+        },
+        {
+          "id": 2.3,
+          "title": "Develop digital learning resources to enhance teaching-learning",
+          "description": "Create and design digital educational resources"
+        },
+        {
+          "id": 2.4,
+          "title": "Use ICT tools to develop 21st century skills",
+          "description": "Develop information, media, technology, learning, innovation, and communication skills"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Pedagogy",
+      "competencies": [
+        {
+          "id": 3.1,
+          "title": "Apply relevant Technology tools for classroom activities",
+          "description": "Select and use appropriate technology for teaching"
+        },
+        {
+          "id": 3.2,
+          "title": "Use ICT knowledge to solve complex problems and support student collaborative activities",
+          "description": "Leverage ICT to address educational challenges and promote collaboration"
+        },
+        {
+          "id": 3.3,
+          "title": "Model collaborative knowledge construction in face to face and virtual environments",
+          "description": "Facilitate collaborative learning in both physical and digital spaces"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Technology Tools",
+      "competencies": [
+        {
+          "id": 4.1,
+          "title": "Demonstrate competence in the technical operations of technology tools and systems",
+          "description": "Master technical aspects of educational technology tools"
+        },
+        {
+          "id": 4.2,
+          "title": "Use technology tools to create new learning opportunities to support community of learners",
+          "description": "Build learning communities using technology"
+        },
+        {
+          "id": 4.3,
+          "title": "Demonstrate proficiency in the use of technology tools to support teaching and learning",
+          "description": "Efficiently use technology to enhance education"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Organization and Administration",
+      "competencies": [
+        {
+          "id": 5.1,
+          "title": "Manage technology-assisted instruction in an inclusive classroom environment",
+          "description": "Organize technology-enhanced learning for all students"
+        },
+        {
+          "id": 5.2,
+          "title": "Exhibit leadership in shared decision-making using technology tools",
+          "description": "Lead collaborative decision-making processes with technology"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Teacher Professional Learning",
+      "competencies": [
+        {
+          "id": 6.1,
+          "title": "Explore existing and emerging technology to acquire additional content and pedagogical knowledge",
+          "description": "Stay current with educational technology developments"
+        },
+        {
+          "id": 6.2,
+          "title": "Utilize technology tools in creating communities of practice",
+          "description": "Build professional learning networks using technology"
+        },
+        {
+          "id": 6.3,
+          "title": "Collaborate with peers, colleagues and stakeholders to access information in support of professional learning",
+          "description": "Work together to support continuous professional development"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Teacher Disposition",
+      "competencies": [
+        {
+          "id": 7.1,
+          "title": "Demonstrate social, ethical, and legal responsibility in the use of technology tools and resources",
+          "description": "Use technology responsibly and ethically"
+        },
+        {
+          "id": 7.2,
+          "title": "Show positive attitude towards the use of technology tools",
+          "description": "Maintain enthusiasm and openness toward educational technology"
+        }
+      ]
+    }
+  ]
+}

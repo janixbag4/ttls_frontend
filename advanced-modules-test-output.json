@@ -1,0 +1,8 @@
+{
+  "url": "http://localhost:3000/teacher/advanced",
+  "screenshot": "advanced-modules-screenshot.png",
+  "logs": [],
+  "errors": [
+    "Error: net::ERR_CONNECTION_REFUSED at http://localhost:3000/teacher/advanced"
+  ]
+}

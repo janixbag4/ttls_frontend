@@ -1,0 +1,41 @@
+/* Overlay and modal for teacher report, matching student report style */
+.teacher-report-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(30, 41, 59, 0.55);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.teacher-report-modal-centered {
+  z-index: 1002;
+  max-width: 420px;
+  width: 95vw;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+  padding: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInModal 0.2s;
+}
+
+.teacher-report-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: #64748b;
+  cursor: pointer;
+  z-index: 1;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}

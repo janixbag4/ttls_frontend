@@ -1,0 +1,181 @@
+.student-modules {
+  padding: 24px;
+}
+
+.modules-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.modules-header h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+}
+
+.modules-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #999;
+}
+
+.header-stats {
+  display: flex;
+  gap: 24px;
+}
+
+.header-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 20px;
+  background: #F9F9F9;
+  border-radius: 8px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.stat-name {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.progress-overview {
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.progress-bar-large {
+  width: 100%;
+  height: 12px;
+  background: #E0E0E0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill-large {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.modules-grid h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  color: #333;
+}
+
+.modules-grid {
+  margin-bottom: 32px;
+  max-width: 900px;
+}
+
+.learning-path {
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.learning-path h3 {
+  margin: 0 0 24px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.path-timeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding: 20px 0;
+}
+
+.path-item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.path-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  background: #E8E8E8;
+  color: #666;
+  z-index: 2;
+  position: relative;
+}
+
+.path-dot.completed {
+  background: #4ECDC4;
+  color: white;
+}
+
+.path-dot.in-progress {
+  background: #667eea;
+  color: white;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.path-dot.pending {
+  background: #F0F0F0;
+  color: #CCC;
+}
+
+.path-line {
+  width: 40px;
+  height: 2px;
+  background: #E0E0E0;
+  margin: 0 -20px;
+  z-index: 1;
+}
+
+.path-item:last-child .path-line {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .modules-header {
+    flex-direction: column;
+  }
+
+  .header-stats {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .path-timeline {
+    overflow-x: auto;
+  }
+}

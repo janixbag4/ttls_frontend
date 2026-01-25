@@ -1,0 +1,216 @@
+/* Modern Modal Overlay and Content */
+.modern-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+.modern-modal-content {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.08);
+  padding: 0;
+  min-width: 420px;
+  max-width: 600px;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1.5px solid #e0e7ef;
+  animation: popIn 0.18s cubic-bezier(.4,2,.6,1) 1;
+  overflow: hidden;
+}
+/* Modern card-based design for student reports */
+.student-reports-modern-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 80vh;
+  padding: 40px 0 0 0;
+  margin-left: 280px;
+  width: calc(100% - 280px);
+  box-sizing: border-box;
+}
+
+.student-reports-modern-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.student-reports-modern-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #3b82f6;
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+}
+
+.student-reports-modern-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.student-reports-modern-fab {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  background: linear-gradient(135deg, #3b82f6 0%, #667eea 100%);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 64px !important;
+  height: 64px !important;
+  min-width: 64px !important;
+  min-height: 64px !important;
+  max-width: 64px !important;
+  max-height: 64px !important;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.18);
+  cursor: pointer;
+  z-index: 1000;
+  transition: background 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.student-reports-modern-fab:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #6366f1 100%);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.28);
+}
+
+.student-reports-modern-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 32px;
+  justify-content: center;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 48px 24px;
+  box-sizing: border-box;
+}
+
+
+.student-reports-modern-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 32px;
+  justify-content: center;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 48px 24px;
+  box-sizing: border-box;
+}
+
+.student-report-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(102, 126, 234, 0.13);
+  padding: 32px 28px 24px 28px;
+  min-width: 320px;
+  max-width: 370px;
+  flex: 1 1 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  border: 1.5px solid #e0e7ef;
+  transition: box-shadow 0.2s, border 0.2s;
+}
+.student-report-card:hover {
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.18);
+  border: 1.5px solid #3b82f6;
+}
+
+.student-report-card .card-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.student-report-card .card-label {
+  font-weight: 600;
+  color: #64748b;
+  min-width: 80px;
+  font-size: 0.98rem;
+}
+
+.student-report-card .card-value {
+  font-size: 1.08rem;
+  color: #22223b;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.student-report-card .card-status {
+  padding: 5px 16px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-left: 8px;
+  background: #e0e7ef;
+  color: #374151;
+  text-transform: capitalize;
+}
+.student-report-card .card-status.pending { background: #fef3c7; color: #b45309; }
+.student-report-card .card-status.reviewed { background: #d1fae5; color: #047857; }
+.student-report-card .card-status.resolved { background: #dbeafe; color: #1d4ed8; }
+
+.student-report-card .card-date {
+  font-size: 0.98rem;
+  color: #64748b;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.student-report-card .card-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #6366f1;
+  margin-bottom: 8px;
+}
+
+.student-report-card .card-type .type-icon {
+  font-size: 1.3rem;
+}
+
+.student-report-card .card-message {
+  margin: 10px 0 0 0;
+  color: #374151;
+  font-size: 1.01rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.student-reports-modern-empty {
+  text-align: center;
+  color: #64748b;
+  font-size: 1.2rem;
+  margin-top: 40px;
+}
+
+@media (max-width: 900px) {
+  .student-reports-modern-list {
+    gap: 18px;
+  }
+  .student-report-card {
+    min-width: 90vw;
+    max-width: 98vw;
+    padding: 24px 10px 18px 10px;
+  }
+}

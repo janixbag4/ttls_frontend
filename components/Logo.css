@@ -1,0 +1,19 @@
+/* components/Logo.css */
+.pcc-logo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-text h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #1e3a8a;
+  font-weight: bold;
+}
+
+.logo-text p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #666;
+}

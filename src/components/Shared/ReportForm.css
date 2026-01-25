@@ -1,0 +1,93 @@
+.report-form-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(102, 126, 234, 0.10);
+  padding: 32px 28px;
+  max-width: 900px;
+  width: 100%;
+  margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.report-form-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #3b82f6;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.report-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-group .required {
+  color: #ef4444;
+  font-size: 1rem;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1.5px solid #e0e7ef;
+  font-size: 1rem;
+  background: #f8fafc;
+  color: #222;
+  transition: border 0.2s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+
+.form-group input[type="file"] {
+  margin-top: 4px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #3b82f6 100%);
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.10);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.btn-primary:disabled {
+  background: #cbd5e1;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3b82f6 0%, #667eea 100%);
+  transform: translateY(-2px);
+}

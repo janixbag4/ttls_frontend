@@ -1,0 +1,109 @@
+/* Modern, clean modal form for submitting reports/feedback */
+.report-form-modern-modal {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 40px rgba(59, 130, 246, 0.13);
+  padding: 40px 36px 32px 36px;
+  min-width: 350px;
+  max-width: 480px;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1.5px solid #e0e7ef;
+  animation: popIn 0.18s cubic-bezier(.4,2,.6,1) 1;
+}
+@keyframes popIn {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.report-form-modern-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2563eb;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.report-form-modern-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.report-form-modern-label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+  font-size: 1.01rem;
+}
+
+.report-form-modern-input,
+.report-form-modern-select,
+.report-form-modern-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #e0e7ef;
+  background: #f8fafc;
+  font-size: 1.05rem;
+  color: #22223b;
+  transition: border 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.report-form-modern-input:focus,
+.report-form-modern-select:focus,
+.report-form-modern-textarea:focus {
+  border: 1.5px solid #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+}
+
+.report-form-modern-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.report-form-modern-submit {
+  background: linear-gradient(135deg, #3b82f6 0%, #667eea 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 1.08rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.13);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.report-form-modern-submit:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #6366f1 100%);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.18);
+}
+
+.report-form-modern-cancel {
+  background: #e0e7ef;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 1.08rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.report-form-modern-cancel:hover {
+  background: #c7d2fe;
+}
+
+@media (max-width: 600px) {
+  .report-form-modern-modal {
+    padding: 18px 4px 18px 4px;
+    min-width: 0;
+    max-width: 98vw;
+  }
+}
