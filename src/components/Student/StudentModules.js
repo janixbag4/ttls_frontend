@@ -229,8 +229,7 @@ const StudentModules = ({ user }) => {
               setCurrentPage(1);
             }}
             style={{
-              flex: 1,
-              maxWidth: '600px',
+              width: '100%',
               padding: '0.75rem 1rem',
               fontSize: '15px',
               borderRadius: '8px',
@@ -326,6 +325,8 @@ const StudentModules = ({ user }) => {
               <div className="classes-grid">
                 {paginatedModules.map((m, index) => {
                   const moduleLessons = lessons.filter(l => l.folder?._id === m._id || l.folder === m._id);
+                  // Module cover photo logic (like teacher)
+                  const coverUrl = m.coverPhoto ? (typeof m.coverPhoto === 'string' && m.coverPhoto.startsWith('http') ? m.coverPhoto : `${apiBase}/modules/${m._id}/cover`) : null;
                   return (
                     <div
                       key={m._id}
@@ -333,8 +334,16 @@ const StudentModules = ({ user }) => {
                       onClick={() => handleModuleClick(m)}
                       style={{ cursor: 'pointer' }}
                     >
-                      <div className={`class-header ${getClassColor(index)}`}>
-                        <div className="class-icon">📦</div>
+                      <div 
+                        className={`class-header ${getClassColor(index)}`}
+                        style={coverUrl ? {
+                          background: `url('${coverUrl}') center center/cover no-repeat`,
+                          boxShadow: '0 2px 8px rgba(60,60,100,0.10)',
+                          position: 'relative',
+                        } : {}}
+                      >
+                        {!coverUrl && <div className="class-icon">📦</div>}
+                        {coverUrl && <div className="class-icon" style={{background:'rgba(255,255,255,0.7)',borderRadius:'50%',padding:4,position:'absolute',top:10,left:10}}>📦</div>}
                       </div>
                       <div className="class-body">
                         <h3 className="class-title">Module {m.moduleNumber}: {m.title}</h3>
@@ -411,39 +420,51 @@ const StudentModules = ({ user }) => {
           ) : (
             <>
               <div className="classes-grid">
-                {paginatedLessons.map((lesson, index) => (
-                  <div
-                    key={lesson._id}
-                    className="class-card"
-                    onClick={() => navigate(`/student/lessons/${lesson._id}`)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className={`class-header ${getClassColor(index)}`}>
-                      <div className="class-icon">📚</div>
-                    </div>
-                    <div className="class-body">
-                      <h3 className="class-title">{lesson.title || 'Untitled Lesson'}</h3>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        {lesson.createdBy && <UserAvatar user={lesson.createdBy} size={32} clickable={true} />}
-                        <p className="class-teacher" style={{ margin: 0 }}>
-                          {lesson.createdBy ? `${lesson.createdBy.firstName} ${lesson.createdBy.lastName}` : 'Teacher'}
-                        </p>
+                {paginatedLessons.map((lesson, index) => {
+                  // Lesson cover photo logic (like teacher)
+                  const coverUrl = lesson.coverPhoto ? (typeof lesson.coverPhoto === 'string' && lesson.coverPhoto.startsWith('http') ? lesson.coverPhoto : `${apiBase}/lessons/${lesson._id}/cover`) : null;
+                  return (
+                    <div
+                      key={lesson._id}
+                      className="class-card"
+                      onClick={() => navigate(`/student/lessons/${lesson._id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div 
+                        className={`class-header ${getClassColor(index)}`}
+                        style={coverUrl ? {
+                          background: `url('${coverUrl}') center center/cover no-repeat`,
+                          boxShadow: '0 2px 8px rgba(60,60,100,0.10)',
+                          position: 'relative',
+                        } : {}}
+                      >
+                        {!coverUrl && <div className="class-icon">📚</div>}
+                        {coverUrl && <div className="class-icon" style={{background:'rgba(255,255,255,0.7)',borderRadius:'50%',padding:4,position:'absolute',top:10,left:10}}>📚</div>}
                       </div>
-                      <p className="class-description">
-                        {lesson.description
-                          ? lesson.description.replace(/<[^>]+>/g, '').substring(0, 100) + '...'
-                          : 'No description'}
-                      </p>
-                      <div className="class-footer">
-                        <div className="class-stats">
-                          {lesson.createdAt
-                            ? new Date(lesson.createdAt).toLocaleDateString()
-                            : 'No date'}
+                      <div className="class-body">
+                        <h3 className="class-title">{lesson.title || 'Untitled Lesson'}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                          {lesson.createdBy && <UserAvatar user={lesson.createdBy} size={32} clickable={true} />}
+                          <p className="class-teacher" style={{ margin: 0 }}>
+                            {lesson.createdBy ? `${lesson.createdBy.firstName} ${lesson.createdBy.lastName}` : 'Teacher'}
+                          </p>
+                        </div>
+                        <p className="class-description">
+                          {lesson.description
+                            ? lesson.description.replace(/<[^>]+>/g, '').substring(0, 100) + '...'
+                            : 'No description'}
+                        </p>
+                        <div className="class-footer">
+                          <div className="class-stats">
+                            {lesson.createdAt
+                              ? new Date(lesson.createdAt).toLocaleDateString()
+                              : 'No date'}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Pagination for Lessons */}

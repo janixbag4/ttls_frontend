@@ -545,7 +545,7 @@ const StudentLessonView = ({ user }) => {
           </div>
         )}
 
-        {/* Embedded Website */}
+        {/* External Link (embedding disabled) */}
         {lesson.iframeUrl && (
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ 
@@ -555,28 +555,13 @@ const StudentLessonView = ({ user }) => {
               color: '#202124',
               fontFamily: "'Google Sans', 'Roboto', sans-serif"
             }}>
-              {lesson.iframeTitle || 'Embedded Website'}
+              {lesson.iframeTitle || 'External Resource'}
             </h2>
-            <div style={{ 
-              position: 'relative', 
-              height: '600px',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              border: '1px solid #e0e0e0',
-              background: '#f9f9f9'
-            }}>
-              <iframe
-                src={getFrameUrl(lesson.iframeUrl)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none'
-                }}
-                allow="accelerometer; ambient-light-sensor; autoplay; battery; camera; display-capture; document-domain; encrypted-media; execution-while-not-rendered; execution-while-out-of-viewport; fullscreen; geolocation; gyroscope; magnetometer; microphone; midi; navigation-override; payment; picture-in-picture; publickey-credentials-get; sync-xhr; usb; vr; xr-spatial-tracking"
-                allowFullScreen
-                referrerPolicy="no-referrer"
-                title={lesson.iframeTitle || 'Embedded website'}
-              />
+            <div style={{ padding: 16, borderRadius: 8, border: '1px solid #e0e0e0', background: '#f9f9f9' }}>
+              <p style={{ margin: 0, marginBottom: 8 }}>This content cannot be embedded due to site restrictions. Click the link below to open it in a new tab.</p>
+              <a href={ensureUrl(lesson.iframeUrl)} target="_blank" rel="noopener noreferrer" style={{ color: '#1a73e8' }}>
+                Open {lesson.iframeTitle || 'link'} in new tab →
+              </a>
             </div>
           </div>
         )}

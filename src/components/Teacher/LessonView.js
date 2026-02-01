@@ -117,6 +117,8 @@ const LessonView = () => {
 
   const token = localStorage.getItem('token');
 
+  
+
   const fetchModules = async () => {
     try {
       const res = await axios.get(`${apiBase}/api/modules`, {
@@ -129,6 +131,8 @@ const LessonView = () => {
       console.error('Failed to fetch modules:', err);
     }
   };
+
+  
 
   useEffect(() => {
     fetchModules();
@@ -303,6 +307,29 @@ const LessonView = () => {
     } catch (err) {
       console.error('Failed to fetch output:', err);
       alert('Failed to load output for editing');
+    }
+  };
+
+  const handleDeleteOutput = async (outputId) => {
+    if (!window.confirm('Are you sure you want to delete this output? All submissions will also be deleted. This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const res = await axios.delete(`${apiBase}/api/assignments/${outputId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.success) {
+        setIsViewOutputModalOpen(false);
+        setViewingOutput(null);
+        await fetchOutputsForLesson();
+        alert('Output deleted successfully');
+      } else {
+        alert(res.data.message || 'Failed to delete output');
+      }
+    } catch (err) {
+      console.error('Failed to delete output:', err);
+      alert('Failed to delete output');
     }
   };
 
@@ -757,7 +784,7 @@ const LessonView = () => {
           </div>
         )}
 
-        {/* Embedded Website */}
+        {/* External Link (embedding disabled) */}
         {lesson.iframeUrl && (
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ 
@@ -767,28 +794,13 @@ const LessonView = () => {
               color: '#202124',
               fontFamily: "'Google Sans', 'Roboto', sans-serif"
             }}>
-              {lesson.iframeTitle || 'Embedded Website'}
+              {lesson.iframeTitle || 'External Resource'}
             </h2>
-            <div style={{ 
-              position: 'relative', 
-              height: '600px',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              border: '1px solid #e0e0e0',
-              background: '#f9f9f9'
-            }}>
-              <iframe
-                src={getFrameUrl(lesson.iframeUrl)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none'
-                }}
-                allow="accelerometer; ambient-light-sensor; autoplay; battery; camera; display-capture; document-domain; encrypted-media; execution-while-not-rendered; execution-while-out-of-viewport; fullscreen; geolocation; gyroscope; magnetometer; microphone; midi; navigation-override; payment; picture-in-picture; publickey-credentials-get; sync-xhr; usb; vr; xr-spatial-tracking"
-                allowFullScreen
-                referrerPolicy="no-referrer"
-                title={lesson.iframeTitle || 'Embedded website'}
-              />
+            <div style={{ padding: 16, borderRadius: 8, border: '1px solid #e0e0e0', background: '#f9f9f9' }}>
+              <p style={{ margin: 0, marginBottom: 8 }}>This content cannot be embedded due to site restrictions. Click the link below to open it in a new tab.</p>
+              <a href={ensureUrl(lesson.iframeUrl)} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>
+                Open {lesson.iframeTitle || 'link'} in new tab →
+              </a>
             </div>
           </div>
         )}
@@ -1053,6 +1065,31 @@ const LessonView = () => {
                   >
                     Submissions
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteOutput(output._id)}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #f87171',
+                      borderRadius: '6px',
+                      background: '#fff',
+                      color: '#dc2626',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = '#fee2e2';
+                      e.target.style.borderColor = '#dc2626';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = '#fff';
+                      e.target.style.borderColor = '#f87171';
+                    }}
+                  >
+                    🗑️ Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -3068,6 +3105,34 @@ const LessonView = () => {
                 }}
               >
                 Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteOutput(viewingOutput._id)}
+                style={{
+                  padding: '12px 28px',
+                  border: '1px solid #f87171',
+                  borderRadius: '10px',
+                  background: '#fee2e2',
+                  color: '#dc2626',
+                  cursor: 'pointer',
+                  fontSize: 15,
+                  fontWeight: 500,
+                  transition: 'all 0.2s ease',
+                  fontFamily: 'inherit'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#fecaca';
+                  e.target.style.borderColor = '#dc2626';
+                  e.target.style.color = '#b91c1c';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#fee2e2';
+                  e.target.style.borderColor = '#f87171';
+                  e.target.style.color = '#dc2626';
+                }}
+              >
+                🗑️ Delete
               </button>
               <button
                 type="button"

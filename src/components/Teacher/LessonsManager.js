@@ -2659,15 +2659,15 @@ const LessonsManager = () => {
                     name="files"
                     multiple
                     onChange={handleFileChange}
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        opacity: 0,
-                        cursor: 'pointer',
-                        zIndex: 1
-                      }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      opacity: 0,
+                      cursor: 'pointer',
+                      zIndex: 1
+                    }}
                   />
                   </div>
                   {files.length > 0 && (
