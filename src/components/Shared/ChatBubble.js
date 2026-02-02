@@ -69,6 +69,7 @@ const ChatBubble = ({ onSelectConversation, selectedUserId }) => {
   return (
     <>
       {/* Chat Bubble Button */}
+        {/*
       <button
         className="chat-bubble"
         onClick={() => setIsOpen(!isOpen)}
@@ -81,8 +82,11 @@ const ChatBubble = ({ onSelectConversation, selectedUserId }) => {
           <span className="bubble-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
         )}
       </button>
+       */}
 
       {/* Chat Sidebar Modal */}
+
+      {/*
       {isOpen && (
         <>
           <div 
@@ -101,7 +105,12 @@ const ChatBubble = ({ onSelectConversation, selectedUserId }) => {
             />
           </div>
         </>
-      )}
+      )
+      
+       
+      }
+
+      */}
     </>
   );
 };
