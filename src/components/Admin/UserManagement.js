@@ -339,7 +339,39 @@ const UserManagement = ({ user, darkMode }) => {
         </div>
 
         {loading ? (
-          <div className="loading">Loading users...</div>
+          <div className="users-table-container">
+            <table className="users-table">
+              <thead>
+                <tr>
+                  <th />
+                  <th>ID Number</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: Math.min(6, usersPerPage) }).map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="skeleton-row">
+                    <td className="skeleton-cell"><span className="skeleton-box box-small" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box box-tag" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box box-tag" /></td>
+                    <td className="skeleton-cell">
+                      <span className="skeleton-btn" />
+                      <span className="skeleton-btn small" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="users-table-container">
             <table className="users-table">

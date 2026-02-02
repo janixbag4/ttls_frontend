@@ -47,7 +47,37 @@ const DashboardContent = ({ pendingUsers, approvedUsers, loading, handleApprove,
       <div className="pending-section" style={{marginBottom:40}}>
         <h2 style={{fontWeight:700,fontSize:22,marginBottom:18}}>Pending Users</h2>
         {loading ? (
-          <div className="loading">Loading...</div>
+          <div className="users-table modern-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID Number</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Department</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={`p-skel-${i}`} className="skeleton-row">
+                    <td className="skeleton-cell"><span className="skeleton-box" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box box-tag" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box" /></td>
+                    <td className="skeleton-cell"><span className="skeleton-box box-small" /></td>
+                    <td className="skeleton-cell">
+                      <span className="skeleton-btn" />
+                      <span className="skeleton-btn small" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="users-table modern-table">
             <table>
