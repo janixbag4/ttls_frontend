@@ -286,19 +286,11 @@ const StudentProfile = ({ user }) => {
           {isEditingBio ? (
             <div>
               <textarea
+                className="form-control textarea bio-textarea"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Tell us about yourself..."
-                style={{
-                  width: '100%',
-                  minHeight: '120px',
-                  padding: '12px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  resize: 'vertical'
-                }}
+                rows="4"
               />
               <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
                 <button

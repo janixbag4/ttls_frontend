@@ -513,6 +513,7 @@ const UserManagement = ({ user, darkMode }) => {
                 <div className="form-group">
                   <label>First Name</label>
                   <input
+                    className="form-control"
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => setFormData({...formData, firstName: e.target.value})}
@@ -522,17 +523,19 @@ const UserManagement = ({ user, darkMode }) => {
                 <div className="form-group">
                   <label>Last Name</label>
                   <input
+                    className="form-control"
                     type="text"
                     value={formData.lastName}
                     onChange={(e) => setFormData({...formData, lastName: e.target.value})}
                     required
                   />
-                </div>
+                </div> 
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>ID Number</label>
                   <input
+                    className="form-control"
                     type="text"
                     value={formData.idNumber}
                     onChange={(e) => setFormData({...formData, idNumber: e.target.value})}
@@ -542,6 +545,7 @@ const UserManagement = ({ user, darkMode }) => {
                 <div className="form-group">
                   <label>Email</label>
                   <input
+                    className="form-control"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -553,6 +557,7 @@ const UserManagement = ({ user, darkMode }) => {
                 <div className="form-group">
                   <label>Password</label>
                   <input
+                    className="form-control"
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -564,6 +569,7 @@ const UserManagement = ({ user, darkMode }) => {
                 <div className="form-group">
                   <label>Role</label>
                   <select
+                    className="form-control"
                     value={formData.role}
                     onChange={(e) => setFormData({...formData, role: e.target.value})}
                     required
@@ -576,6 +582,7 @@ const UserManagement = ({ user, darkMode }) => {
                 <div className="form-group">
                   <label>Department</label>
                   <input
+                    className="form-control"
                     type="text"
                     value={formData.department}
                     onChange={(e) => setFormData({...formData, department: e.target.value})}
@@ -585,6 +592,7 @@ const UserManagement = ({ user, darkMode }) => {
               <div className="form-group">
                 <label>Bio</label>
                 <textarea
+                  className="form-control textarea"
                   value={formData.bio}
                   onChange={(e) => setFormData({...formData, bio: e.target.value})}
                   rows="3"

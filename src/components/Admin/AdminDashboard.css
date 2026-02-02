@@ -460,6 +460,49 @@
   100% { background-position: 200px 0; }
 }
 
+/* Modal overlay and modal - ensure proper stacking and centered layout */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  z-index: 3000;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 760px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  padding: 20px;
+  position: relative;
+  z-index: 3001;
+}
+
+.modal .modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+
 /* REMOVE drawer-sidebar and related styles for admin sidebar */
 /* .drawer-sidebar { ... }
 .drawer-header { ... }
