@@ -543,7 +543,7 @@ const API_URL = process.env.REACT_APP_API_URL + '/api';
               <div className="about-icon">🎓</div>
               <h3>Educational Excellence</h3>
               <p>
-                TTL-e Platform provides educators with powerful tools to create, manage, and deliver 
+                TTL-e Module provides educators with powerful tools to create, manage, and deliver 
                 engaging lessons that inspire students and promote active learning. Our platform 
                 combines pedagogical best practices with modern technology to create meaningful 
                 educational experiences.
@@ -553,7 +553,7 @@ const API_URL = process.env.REACT_APP_API_URL + '/api';
               <div className="about-icon">💡</div>
               <h3>Innovation in Education</h3>
               <p>
-                Built with the future of education in mind, TTL-e Platform integrates seamlessly 
+                Built with the future of education in mind, TTL-e Module integrates seamlessly 
                 with modern teaching methodologies. From interactive modules to comprehensive 
                 assessment tools, we provide everything needed for effective digital learning.
               </p>
@@ -796,7 +796,7 @@ const API_URL = process.env.REACT_APP_API_URL + '/api';
         <div className="container">
           <div className="footer-content">
             <div className="footer-section">
-              <h4>TTL-e Platform</h4>
+              <h4>TTL-e Module</h4>
               <p>Empowering education through innovative technology solutions for modern teaching and learning.</p>
             </div>
             <div className="footer-section">

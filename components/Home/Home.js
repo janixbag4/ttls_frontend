@@ -165,7 +165,7 @@ const Home = () => {
               <div className="about-icon">🎓</div>
               <h3>Educational Excellence</h3>
               <p>
-                TTL-e Platform provides educators with powerful tools to create, manage, and deliver 
+                TTL-e Module provides educators with powerful tools to create, manage, and deliver 
                 engaging lessons that inspire students and promote active learning. Our platform 
                 combines pedagogical best practices with modern technology to create meaningful 
                 educational experiences.
@@ -334,7 +334,7 @@ const Home = () => {
         <div className="container">
           <div className="footer-content">
             <div className="footer-section">
-              <h4>TTL-e Platform</h4>
+              <h4>TTL-e Module</h4>
               <p>Empowering education through innovative technology solutions for modern teaching and learning.</p>
             </div>
             <div className="footer-section">
@@ -363,139 +363,4 @@ const Home = () => {
   );
 };
 
-export default Home;
-// components/Home/Home.js
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import Logo from '../Logo';
-import './Home.css';
 
-const Home = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  
-  // Educational technology images - Replace with actual image URLs
-  const slides = [
-    {
-      url: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200',
-      caption: 'Modern Digital Learning'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1200',
-      caption: 'Interactive Classrooms'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200',
-      caption: 'Technology Integration'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1200',
-      caption: '21st Century Skills'
-    }
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [slides.length]);
-
-  return (
-    <div className="home-page">
-      {/* Navigation */}
-      <nav className="home-nav">
-        <Logo />
-        <div className="nav-buttons">
-          <Link to="/login" className="btn-nav">Login</Link>
-          <Link to="/signup" className="btn-nav btn-primary">Sign Up</Link>
-        </div>
-      </nav>
-
-      {/* Slideshow Section */}
-      <section className="slideshow-section">
-        <div className="slideshow-container">
-          {slides.map((slide, index) => (
-            <div 
-              key={index}
-              className={`slide ${index === currentSlide ? 'active' : ''}`}
-              style={{ backgroundImage: `url(${slide.url})` }}
-            >
-              <div className="slide-overlay">
-                <h2>{slide.caption}</h2>
-              </div>
-            </div>
-          ))}
-          
-          <div className="slide-indicators">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                className={`indicator ${index === currentSlide ? 'active' : ''}`}
-                onClick={() => setCurrentSlide(index)}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Video Introduction Section */}
-      <section className="video-intro">
-        <div className="container">
-          <h2 className="section-title">About Technology for Teaching and Learning</h2>
-          <p className="section-description">
-            Explore the fundamentals of integrating technology in modern education
-          </p>
-          
-          <div className="video-wrapper">
-            <iframe
-              width="100%"
-              height="500"
-              src="https://www.youtube.com/embed/GoQf2G_6maintain?enablejsapi=1"
-              title="Technology for Teaching and Learning Introduction"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="features">
-        <div className="container">
-          <h2>Platform Features</h2>
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">📚</div>
-              <h3>Interactive Lessons</h3>
-              <p>Access downloadable PDF materials and interactive learning resources</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">✏️</div>
-              <h3>Activities & Quizzes</h3>
-              <p>Complete assignments with word processor-style editing tools</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">📤</div>
-              <h3>File Submission</h3>
-              <p>Upload and submit your work directly through the platform</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">👥</div>
-              <h3>Multi-User System</h3>
-              <p>Separate dashboards for students, teachers, and administrators</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="home-footer">
-        <p>&copy; 2025 Passi City College - Technology for Teaching and Learning</p>
-        <p>Empowering Education Through Technology</p>
-      </footer>
-    </div>
-  );
-};
-
-export default Home;
