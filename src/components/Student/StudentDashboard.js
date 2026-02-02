@@ -13,6 +13,8 @@ import StudentSubmissions from './StudentSubmissions';
 import StudentProfile from './StudentProfile';
 import ReportForm from '../Shared/ReportForm';
 import StudentReports from './StudentReports';
+import ChatBubble from '../Shared/ChatBubble';
+import ChatWindow from '../Shared/ChatWindow';
 import './StudentDashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL + '/api';
@@ -22,6 +24,7 @@ const StudentDashboard = ({ user, onLogout }) => {
   const [assignments, setAssignments] = useState([]);
   const [progress, setProgress] = useState([]);
   const [submissions, setSubmissions] = useState([]);
+  const [selectedChatUser, setSelectedChatUser] = useState(null);
   const [dashboardStats, setDashboardStats] = useState({
     completedLessons: 0,
     inProgressLessons: 0,
@@ -357,8 +360,8 @@ const StudentDashboard = ({ user, onLogout }) => {
     };
 
     return (
-      <div className="classroom-main">
-        {/* Top Bar */}
+      <>
+        {/* Dashboard Topbar */}
         <div className="dashboard-topbar">
           <div className="topbar-content">
             <div className="topbar-left">
@@ -367,6 +370,10 @@ const StudentDashboard = ({ user, onLogout }) => {
             </div>
           </div>
         </div>
+
+        {/* Dashboard Content */}
+        <div className="dashboard-content-wrapper">
+          <div className="classroom-main">
 
         {/* Shortcuts */}
         <div className="shortcuts-section">
@@ -377,7 +384,7 @@ const StudentDashboard = ({ user, onLogout }) => {
               <h3>Modules</h3>
               <p>View and access your learning modules</p>
             </Link>
-            <Link to="/student/assignments" className="shortcut-card">
+            <Link to="/student/assignments" className="shortcut-card assignment-card">
               <div className="shortcut-icon">📝</div>
               <h3>Assignments</h3>
               <p>View all assignments and outputs</p>
@@ -591,7 +598,9 @@ const StudentDashboard = ({ user, onLogout }) => {
         <footer className="dashboard-footer">
           <p>About TTL-e Module</p>
         </footer>
-      </div>
+          </div>
+        </div>
+      </>
     );
   };
     
@@ -800,6 +809,20 @@ const StudentDashboard = ({ user, onLogout }) => {
           
         </Routes>
       </main>
+
+      {/* Conversation List Sidebar */}
+      <ChatBubble
+        onSelectConversation={setSelectedChatUser}
+        selectedUserId={selectedChatUser?._id}
+      />
+
+      {/* Chat Window */}
+      {selectedChatUser && (
+        <ChatWindow 
+          selectedUser={selectedChatUser}
+          onClose={() => setSelectedChatUser(null)}
+        />
+      )}
     </div>
   );
 };

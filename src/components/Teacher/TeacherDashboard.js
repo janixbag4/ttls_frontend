@@ -10,7 +10,8 @@ import TeacherSubmissions from './TeacherSubmissions';
 import AdvancedModules from '../Shared/AdvancedModules';
 import Guidelines from './Guidelines';
 import TeacherProfile from './TeacherProfile';
-
+import ChatBubble from '../Shared/ChatBubble';
+import ChatWindow from '../Shared/ChatWindow';
 import TeacherReports from './TeacherReports';
 import './TeacherDashboard.css';
 
@@ -18,6 +19,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
   const [lessons, setLessons] = useState([]);
   const [modules, setModules] = useState([]);
   const [progress, setProgress] = useState([]);
+  const [selectedChatUser, setSelectedChatUser] = useState(null);
   const [dashboardStats, setDashboardStats] = useState({
     studentsViewingModules: 0,
     assignmentSubmissions: 0,
@@ -271,67 +273,61 @@ const TeacherDashboard = ({ user, onLogout }) => {
   const DashboardHome = () => {
     return (
       <>
-        {/* Top Bar */}
+        {/* Dashboard Topbar */}
         <div className="dashboard-topbar">
           <div className="topbar-content">
             <div className="topbar-left">
               <h2 className="topbar-title">Dashboard</h2>
-              <p className="topbar-subtitle">Overview of your teaching activities</p>
+              <p className="topbar-subtitle">Manage your lessons and student progress</p>
             </div>
-            <div className="topbar-actions">
-              <Link to="/teacher/lessons" className="btn-create-topbar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                <span>Create Lesson</span>
+          </div>
+        </div>
+
+        {/* Dashboard Content */}
+        <div className="dashboard-content-wrapper">
+          {/* Quick Access Stats */}
+          <div className="dashboard-stats-section">
+            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '40px' }}>
+              <div className="stat-card" style={{ padding: '20px', textAlign: 'center' }}>
+                <div className="stat-icon" style={{ fontSize: '32px', marginBottom: '8px' }}>📚</div>
+                <h3 className="stat-value">{modules.length}</h3>
+                <p className="stat-label">Modules Made</p>
+              </div>
+              <div className="stat-card" style={{ padding: '20px', textAlign: 'center' }}>
+                <div className="stat-icon" style={{ fontSize: '32px', marginBottom: '8px' }}>📖</div>
+                <h3 className="stat-value">{lessons.length}</h3>
+                <p className="stat-label">Lessons Made</p>
+              </div>
+            </div>
+            <h2 className="section-title">Quick Access</h2>
+          </div>
+
+          {/* Shortcuts */}
+          <div className="shortcuts-section">
+            <div className="shortcuts-grid">
+              <Link to="/teacher/lessons" className="shortcut-card">
+                <div className="shortcut-icon">📚</div>
+                <h3>Modules</h3>
+                <p>View and manage your lessons</p>
+              </Link>
+              <Link to="/teacher/submissions" className="shortcut-card assignment-card">
+                <div className="shortcut-icon">📊</div>
+                <h3>Submissions & Grading</h3>
+                <p>Review and grade student work</p>
+              </Link>
+              <Link to="/teacher/guidelines" className="shortcut-card">
+                <div className="shortcut-icon">📋</div>
+                <h3>Guidelines</h3>
+                <p>View teaching guidelines</p>
               </Link>
             </div>
           </div>
-        </div>
 
-        {/* Quick Access Stats */}
-        <div className="dashboard-stats-section">
-          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '40px' }}>
-            <div className="stat-card" style={{ padding: '20px', textAlign: 'center' }}>
-              <div className="stat-icon" style={{ fontSize: '32px', marginBottom: '8px' }}>📚</div>
-              <h3 className="stat-value">{modules.length}</h3>
-              <p className="stat-label">Modules Made</p>
-            </div>
-            <div className="stat-card" style={{ padding: '20px', textAlign: 'center' }}>
-              <div className="stat-icon" style={{ fontSize: '32px', marginBottom: '8px' }}>📖</div>
-              <h3 className="stat-value">{lessons.length}</h3>
-              <p className="stat-label">Lessons Made</p>
-            </div>
-          </div>
-          <h2 className="section-title">Quick Access</h2>
+          {/* Footer */}
+          <footer className="dashboard-footer">
+            <p>About TTL-e Module</p>
+          </footer>
         </div>
-
-        {/* Shortcuts */}
-        <div className="shortcuts-section">
-          <div className="shortcuts-grid">
-            <Link to="/teacher/lessons" className="shortcut-card">
-              <div className="shortcut-icon">📚</div>
-              <h3>Modules</h3>
-              <p>View and manage your lessons</p>
-            </Link>
-            <Link to="/teacher/submissions" className="shortcut-card">
-              <div className="shortcut-icon">📊</div>
-              <h3>Submissions & Grading</h3>
-              <p>Review and grade student work</p>
-            </Link>
-            <Link to="/teacher/guidelines" className="shortcut-card">
-              <div className="shortcut-icon">📋</div>
-              <h3>Guidelines</h3>
-              <p>View teaching guidelines</p>
-            </Link>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <footer className="dashboard-footer">
-          <p>About TTL-e Module</p>
-        </footer>
       </>
     );
   };
@@ -542,6 +538,20 @@ const TeacherDashboard = ({ user, onLogout }) => {
           <Route path="/profile" element={<TeacherProfile user={user} />} />
         </Routes>
       </main>
+
+      {/* Conversation List Sidebar */}
+      <ChatBubble 
+        onSelectConversation={setSelectedChatUser}
+        selectedUserId={selectedChatUser?._id}
+      />
+
+      {/* Chat Window */}
+      {selectedChatUser && (
+        <ChatWindow 
+          selectedUser={selectedChatUser}
+          onClose={() => setSelectedChatUser(null)}
+        />
+      )}
     </div>
   );
 };

@@ -33,6 +33,68 @@
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
+  margin-top: 0;
+}
+
+/* Modern Header - Card Style */
+.modern-header {
+  background: #ffffff;
+  color: #1f2937;
+  padding: 24px 32px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modern-header-content {
+  flex: 1;
+}
+
+.modern-header-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+  color: white;
+}
+
+.modern-header-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 4px 0 0 0;
+}
+
+.modern-header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modern-header-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.modern-header-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.dashboard-content-wrapper {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 /* Modern Admin Dashboard Cards */
@@ -114,7 +176,7 @@
   flex: 1;
   overflow-y: auto;
   background: var(--bg-primary);
-  padding: 32px;
+ 
   transition: background-color 0.3s ease;
 }
 
@@ -394,7 +456,6 @@
 }
 .search-box {
   position: relative;
-  flex: 1 1 420px;
 }
 .search-input {
   width: 100%;

@@ -49,7 +49,7 @@
 .search-box::before {
   content: "🔍";
   position: absolute;
-  left: 12px;
+  left: 30px;
   top: 50%;
   transform: translateY(-50%);
 }

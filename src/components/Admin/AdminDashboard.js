@@ -339,18 +339,34 @@ const AdminDashboard = ({ user, onLogout }) => {
         </div>
       </aside>
       <main className="classroom-main">
-        <Routes>
-          <Route path="/" element={<DashboardContent 
-            pendingUsers={pendingUsers} 
-            approvedUsers={approvedUsers} 
-            loading={loading} 
-            handleApprove={handleApprove} 
-            handleReject={handleReject}
-            handleDeleteUser={handleDeleteUser}
-          />} />
-          <Route path="/users" element={<UserManagement user={user} />} />
-          <Route path="/reports" element={<Reports user={user} />} />
-        </Routes>
+        {/* Modern Header */}
+        <div className="modern-header">
+          <div className="modern-header-content">
+            <h1 className="modern-header-title">Admin Dashboard</h1>
+            <p className="modern-header-subtitle">Manage users, approvals, and platform reports</p>
+          </div>
+          <div className="modern-header-actions">
+            <Link to="/admin/users" className="modern-header-btn">
+              <span>👥 Manage Users</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Dashboard Content */}
+        <div className="dashboard-content-wrapper">
+          <Routes>
+            <Route path="/" element={<DashboardContent 
+              pendingUsers={pendingUsers} 
+              approvedUsers={approvedUsers} 
+              loading={loading} 
+              handleApprove={handleApprove} 
+              handleReject={handleReject}
+              handleDeleteUser={handleDeleteUser}
+            />} />
+            <Route path="/users" element={<UserManagement user={user} />} />
+            <Route path="/reports" element={<Reports user={user} />} />
+          </Routes>
+        </div>
       </main>
     </div>
   );

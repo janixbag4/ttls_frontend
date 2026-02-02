@@ -236,6 +236,7 @@ const API_URL = process.env.REACT_APP_API_URL + '/api';
             <a href="#author" className="nav-link">Author</a>
           </div>
           <div className="nav-actions">
+            {/*
             <button 
               className="theme-toggle-btn"
               onClick={toggleDarkMode}
@@ -259,6 +260,8 @@ const API_URL = process.env.REACT_APP_API_URL + '/api';
                 </svg>
               )}
             </button>
+
+            */}
             <button className="btn-nav" onClick={() => openPanel('login')}>Login</button>
             <button className="btn-nav btn-primary" onClick={() => openPanel('signup')}>Sign Up</button>
           </div>

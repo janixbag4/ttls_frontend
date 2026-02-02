@@ -6,10 +6,14 @@ import './Home.css';
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [scrolled, setScrolled] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
+  
+  
+  {/*
+    const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
   });
+   */}  
 
   const slides = [
     {
@@ -47,6 +51,7 @@ const Home = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  {/* 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
@@ -54,8 +59,11 @@ const Home = () => {
 
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
+  */}
+
+  
   return (
-    <div className={`home-page ${darkMode ? 'dark' : 'light'}`}>
+    <div className={`home-page`}>
       <nav className={`home-nav ${scrolled ? 'scrolled' : ''}`}>
         <div className="nav-container">
           <Logo />
@@ -66,7 +74,8 @@ const Home = () => {
             <a href="#author" className="nav-link">Author</a>
           </div>
           <div className="nav-actions">
-            <button
+
+{/*           <button
               className="theme-toggle-btn"
               onClick={toggleDarkMode}
               aria-label="Toggle dark mode"
@@ -88,7 +97,11 @@ const Home = () => {
                   <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                 </svg>
               )}
-            </button>
+
+              
+            </button>     */}  
+
+         
             <Link to="/login" className="btn-nav">Login</Link>
             <Link to="/signup" className="btn-nav btn-primary">Sign Up</Link>
           </div>

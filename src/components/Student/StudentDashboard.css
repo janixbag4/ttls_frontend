@@ -38,7 +38,6 @@ body, .classroom-main {
 /* Google Classroom-inspired Student Dashboard - Same styles as Teacher */
 
 :root[data-theme='light'] {
-  --bg-primary: #f8f9fa;
   --bg-secondary: #ffffff;
   --text-primary: #3c4043;
   --text-secondary: #5f6368;
@@ -67,7 +66,6 @@ body, .classroom-main {
   display: grid;
   grid-template-columns: 280px 1fr;
   min-height: 100vh;
-  background: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -76,7 +74,6 @@ body, .classroom-main {
 .classroom-topbar {
   background: var(--topbar-bg);
   border-bottom: 1px solid var(--border-color);
-  padding: 0 24px;
   height: 64px;
   display: flex;
   align-items: center;
@@ -426,7 +423,6 @@ body, .classroom-main {
   padding: 5px 6px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  background: var(--bg-primary);
   color: var(--text-primary);
   font-size: 11px;
   font-family: inherit;
@@ -572,7 +568,7 @@ body, .classroom-main {
 /* Main Content - Only apply margin-left to the main element */
 main.classroom-main {
   flex: 1;
-  padding: 32px 24px;
+  padding: 24px;
   max-width: 100%;
   margin: 0;
   margin-left: 280px;
@@ -868,7 +864,7 @@ main.classroom-main > * section.classroom-main {
   background: var(--bg-secondary);
   border-radius: 20px;
   padding: 28px 36px;
-  margin-bottom: 36px;
+  margin-bottom: 16px;
   border: 1px solid var(--border-color);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08),
               0 1px 3px rgba(0, 0, 0, 0.05);
@@ -924,6 +920,17 @@ main.classroom-main > * section.classroom-main {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+/* Dashboard Content Wrapper */
+.dashboard-content-wrapper {
+  width: 100%;
+  flex: 1;
+}
+
+.dashboard-content-wrapper > * {
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* Section Title */
@@ -1135,7 +1142,6 @@ h2.section-title {
 .shortcut-card {
   background: var(--bg-secondary);
   border-radius: 18px;
-  padding: 32px 24px;
   text-decoration: none;
   color: var(--text-primary);
   border: 1px solid var(--border-color);
@@ -1314,7 +1320,6 @@ h2.section-title {
 /* Dashboard Footer */
 .dashboard-footer {
   margin-top: 80px;
-  padding: 32px 0;
   border-top: 2px solid var(--border-color);
   text-align: center;
   position: relative;
