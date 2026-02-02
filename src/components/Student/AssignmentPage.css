@@ -281,6 +281,7 @@
   border-radius: 12px 12px 0 0;
   border: 1px solid var(--border-color);
   border-bottom: none;
+  flex-wrap: wrap;
 }
 
 .editor-toolbar-btn {
@@ -304,6 +305,18 @@
 
 .editor-toolbar-btn:active {
   transform: translateY(0);
+}
+
+/* Mobile-friendly buttons in toolbar */
+.editor-toolbar button {
+  min-height: 40px;
+  min-width: 40px;
+  touch-action: manipulation;
+}
+
+.editor-toolbar select {
+  min-height: 40px;
+  touch-action: manipulation;
 }
 
 .editor-content {
@@ -821,6 +834,327 @@
   .question-meta {
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  /* Editor toolbar mobile optimization */
+  .editor-toolbar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 180px;
+  }
+
+  .editor-toolbar > div {
+    display: contents;
+  }
+
+  .editor-toolbar button,
+  .editor-toolbar-btn {
+    padding: 10px 6px !important;
+    font-size: 12px !important;
+    min-height: 40px !important;
+    min-width: 100% !important;
+  }
+
+  /* Select dropdowns - better sizing on mobile */
+  .editor-toolbar select {
+    min-height: 40px !important;
+    font-size: 13px !important;
+    padding: 8px !important;
+    grid-column: span 1;
+  }
+
+  /* Editor content area */
+  .editor-content {
+    min-height: 200px;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  /* File upload area */
+  .file-upload-area {
+    padding: 20px 10px;
+  }
+
+  .file-upload-label {
+    font-size: 14px;
+  }
+
+  /* Quiz grid optimization */
+  .quiz-questions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quiz-question-card {
+    padding: 12px;
+  }
+
+  .question-number {
+    min-width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .question-text {
+    font-size: 13px;
+  }
+
+  .question-points {
+    font-size: 12px;
+  }
+
+  .multiple-choice-options {
+    gap: 8px;
+  }
+
+  .choice-option {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .answer-input-container textarea {
+    min-height: 120px;
+    font-size: 16px;
+    padding: 10px;
+  }
+
+  .file-input-wrapper {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .assignment-page-container {
+    padding: 8px;
+  }
+
+  .assignment-header {
+    padding: 12px;
+  }
+
+  .assignment-title {
+    font-size: 1.5rem;
+  }
+
+  .assignment-header-content {
+    padding: 0;
+  }
+
+  .assignment-content-card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 1rem;
+    gap: 6px;
+  }
+
+  .card-title::before {
+    width: 3px;
+    height: 16px;
+  }
+
+  /* Editor mobile optimization for small screens */
+  .editor-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    padding: 8px;
+    overflow-y: auto;
+    max-height: 200px;
+  }
+
+  .editor-toolbar button,
+  .editor-toolbar-btn {
+    padding: 8px 6px !important;
+    font-size: 11px !important;
+    min-height: 36px;
+    min-width: 100%;
+  }
+
+  .editor-toolbar select {
+    min-height: 36px !important;
+    font-size: 12px !important;
+    padding: 6px !important;
+  }
+
+  .editor-content {
+    min-height: 150px;
+    padding: 10px;
+    font-size: 15px;
+  }
+
+  .editor-content:empty::before {
+    font-size: 12px;
+  }
+
+  .action-buttons {
+    flex-direction: column-reverse;
+    gap: 8px;
+    padding: 0 0 20px 0;
+  }
+
+  .btn-cancel,
+  .btn-submit {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  /* Attachment styling */
+  .attachments-list {
+    gap: 8px;
+  }
+
+  .attachment-item {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .attachment-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .attachment-link {
+    font-size: 12px;
+    word-break: break-word;
+  }
+
+  /* Quiz mobile styles */
+  .quiz-header {
+    margin-bottom: 12px;
+  }
+
+  .quiz-title {
+    font-size: 1rem;
+  }
+
+  .quiz-questions-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .quiz-question-card {
+    padding: 10px;
+  }
+
+  .question-number {
+    min-width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .question-text {
+    font-size: 12px;
+  }
+
+  .question-type-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+
+  .question-points {
+    font-size: 11px;
+  }
+
+  .choice-option {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .choice-option input {
+    min-width: 16px;
+    min-height: 16px;
+  }
+
+  .answer-input-container textarea {
+    min-height: 100px;
+    font-size: 15px;
+    padding: 8px;
+  }
+
+  /* File upload */
+  .file-upload-area {
+    padding: 15px 8px;
+    border-radius: 8px;
+  }
+
+  .file-upload-label {
+    font-size: 12px;
+  }
+
+  .uploaded-files-list {
+    gap: 6px;
+  }
+
+  .uploaded-file-item {
+    padding: 8px;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .uploaded-file-name {
+    font-size: 12px;
+    word-break: break-word;
+  }
+
+  .uploaded-file-remove {
+    font-size: 11px;
+    padding: 6px 10px !important;
+    width: 100%;
+  }
+
+  /* Submission status */
+  .submission-status {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .submission-status-header {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .submission-status-icon {
+    font-size: 1.25rem;
+  }
+
+  .submission-status-title {
+    font-size: 1rem;
+  }
+
+  .submission-status-meta {
+    font-size: 12px;
+  }
+
+  .submission-grade-badge {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .submission-feedback-box {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  /* Instructions box */
+  .instructions-box {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .instructions-box strong {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .instructions-box div {
+    font-size: 12px;
   }
 }
 

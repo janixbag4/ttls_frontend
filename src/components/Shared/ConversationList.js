@@ -6,7 +6,7 @@ import './ConversationList.css';
 const API_URL = process.env.REACT_APP_API_URL + '/api';
 const SOCKET_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-const ConversationList = ({ onSelectConversation, selectedUserId }) => {
+const ConversationList = ({ onSelectConversation, selectedUserId, onClose }) => {
   const [activeTab, setActiveTab] = useState('people'); // 'people' or 'messages'
   const [conversations, setConversations] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
@@ -147,7 +147,18 @@ const ConversationList = ({ onSelectConversation, selectedUserId }) => {
       <div className="conversation-list">
         {/* Header with Tabs */}
         <div className="chat-header">
-          <h2>Messages</h2>
+          <div className="chat-header-top">
+            <h2>Messages</h2>
+            {onClose && (
+              <button 
+                className="chat-close-btn"
+                onClick={onClose}
+                title="Close messages"
+              >
+                ✕
+              </button>
+            )}
+          </div>
           <div className="chat-tabs">
             <button
               className={`tab-button ${activeTab === 'people' ? 'active' : ''}`}

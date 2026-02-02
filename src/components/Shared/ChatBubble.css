@@ -92,11 +92,51 @@
     right: 16px;
     width: 56px;
     height: 56px;
+    font-size: 20px;
   }
 
   .bubble-unread {
     width: 24px;
     height: 24px;
     font-size: 0.7rem;
+  }
+
+  .chat-sidebar-modal {
+    width: 100%;
+    max-width: 100vw;
+    border-radius: 16px 16px 0 0;
+    animation: slideInUp 0.3s ease-out;
+    height: 100vh;
+  }
+
+  @keyframes slideInUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-bubble {
+    bottom: 12px;
+    right: 12px;
+    width: 52px;
+    height: 52px;
+    font-size: 18px;
+  }
+
+  .chat-sidebar-modal {
+    height: 100vh;
+  }
+
+  .bubble-unread {
+    width: 22px;
+    height: 22px;
+    font-size: 0.65rem;
+    top: -6px;
+    right: -6px;
   }
 }

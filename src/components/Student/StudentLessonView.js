@@ -4,6 +4,7 @@ import axios from 'axios';
 import DOMPurify from 'dompurify';
 import './StudentDashboard.css';
 import '../Teacher/TeacherDashboard.css';
+import '../Shared/LessonView.css';
 import UserAvatar from '../Shared/UserAvatar';
 
 const getYouTubeEmbedUrl = (url) => {
@@ -298,57 +299,35 @@ const StudentLessonView = ({ user }) => {
   const youtubeEmbedUrl = getYouTubeEmbedUrl(lesson.youtubeLink);
 
   return (
-    <div className="classroom-main" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="classroom-main" style={{ maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
+      <div className="lesson-header">
         <Link 
           to="/student/modules" 
-          style={{ 
-            display: 'inline-flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            color: '#1a73e8', 
-            textDecoration: 'none',
-            marginBottom: '16px',
-            fontSize: '14px',
-            fontWeight: 500
-          }}
+          className="lesson-back-link"
         >
           <span>←</span>
           <span>Back to Modules</span>
         </Link>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-          <div>
-            <h1 style={{ 
-              fontSize: '32px', 
-              fontWeight: 400, 
-              color: '#202124', 
-              margin: 0,
-              marginBottom: '8px',
-              fontFamily: "'Google Sans', 'Roboto', sans-serif"
-            }}>
+        <div className="lesson-title-section">
+          <div className="lesson-title-content">
+            <h1 className="lesson-title">
               {lesson.title}
             </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+            <div className="lesson-meta">
               {lesson.createdBy && <UserAvatar user={lesson.createdBy} size={40} clickable={true} />}
-              <div>
-                <div style={{ 
-                  fontSize: '16px', 
-                  color: '#5f6368', 
-                  margin: 0 
-                }}>
-                  {lesson.module && <div>{`Module ${lesson.module.moduleNumber}: ${lesson.module.title}`}</div>}
-                  {lesson.createdBy && <div>{lesson.createdBy.firstName} {lesson.createdBy.lastName}</div>}
-                  {lesson.createdAt && <div>{new Date(lesson.createdAt).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}</div>}
-                </div>
+              <div className="lesson-meta-info">
+                {lesson.module && <div>{`Module ${lesson.module.moduleNumber}: ${lesson.module.title}`}</div>}
+                {lesson.createdBy && <div>{lesson.createdBy.firstName} {lesson.createdBy.lastName}</div>}
+                {lesson.createdAt && <div>{new Date(lesson.createdAt).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</div>}
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="lesson-actions">
             <button
               type="button"
               onClick={() => {
@@ -357,17 +336,7 @@ const StudentLessonView = ({ user }) => {
                   fetchStudentPerformance();
                 }
               }}
-              style={{
-                padding: '10px 20px',
-                border: '1px solid #dadce0',
-                borderRadius: '24px',
-                background: showPerformance ? '#e8f0fe' : '#fff',
-                color: showPerformance ? '#1a73e8' : '#5f6368',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 500,
-                transition: 'all 0.2s'
-              }}
+              className={`btn-lesson-action ${showPerformance ? 'active' : ''}`}
             >
               {showPerformance ? 'Hide' : 'View'} My Performance
             </button>
@@ -377,93 +346,68 @@ const StudentLessonView = ({ user }) => {
 
       {/* Student Performance Section */}
       {showPerformance && (
-        <div style={{ 
-          background: '#fff', 
-          borderRadius: '8px', 
-          padding: '24px', 
-          marginBottom: '24px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)'
-        }}>
+        <div className="lesson-performance">
           {loadingPerformance ? (
             <p>Loading performance data...</p>
           ) : studentPerformance ? (
             <div>
-              <h3 style={{ marginTop: 0, marginBottom: '16px', fontSize: '20px', fontWeight: 400 }}>
-                My Performance
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                <div style={{ padding: '16px', background: '#f8f9fa', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '14px', color: '#5f6368', marginBottom: '4px' }}>Assignments Completed</div>
-                  <div style={{ fontSize: '24px', fontWeight: 500, color: '#202124' }}>
+              <h3>My Performance</h3>
+              <div className="performance-metrics">
+                <div className="metric-card">
+                  <div className="metric-label">Assignments Completed</div>
+                  <div className="metric-value">
                     {studentPerformance.completedAssignments} / {studentPerformance.totalAssignments}
                   </div>
                 </div>
-                <div style={{ padding: '16px', background: '#f8f9fa', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '14px', color: '#5f6368', marginBottom: '4px' }}>Average Score</div>
-                  <div style={{ fontSize: '24px', fontWeight: 500, color: '#202124' }}>
+                <div className="metric-card">
+                  <div className="metric-label">Average Score</div>
+                  <div className="metric-value">
                     {studentPerformance.averageScore ? `${studentPerformance.averageScore.toFixed(1)}%` : 'N/A'}
                   </div>
                 </div>
               </div>
               {studentPerformance.submissions && studentPerformance.submissions.length > 0 && (
-                <div style={{ marginTop: '24px' }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '12px' }}>My Submissions</h4>
-                  <div style={{ border: '1px solid #e0e0e0', borderRadius: '8px', overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead style={{ background: '#f8f9fa' }}>
-                        <tr>
-                          <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', fontWeight: 500, borderBottom: '1px solid #e0e0e0' }}>
-                            Assignment
-                          </th>
-                          <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', fontWeight: 500, borderBottom: '1px solid #e0e0e0' }}>
-                            Status
-                          </th>
-                          <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', fontWeight: 500, borderBottom: '1px solid #e0e0e0' }}>
-                            Score
-                          </th>
-                          <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', fontWeight: 500, borderBottom: '1px solid #e0e0e0' }}>
-                            Submitted
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {studentPerformance.submissions.map((submission, idx) => {
-                          const assignment = outputs.find(o => o._id === submission.assignment?._id || o._id === submission.assignment);
-                          return (
-                            <tr key={submission._id || idx} style={{ borderBottom: idx < studentPerformance.submissions.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                              <td style={{ padding: '12px', fontSize: '14px' }}>
-                                {assignment?.title || 'Unknown Assignment'}
-                              </td>
-                              <td style={{ padding: '12px', fontSize: '14px' }}>
-                                <span style={{
-                                  padding: '4px 8px',
-                                  borderRadius: '4px',
-                                  background: submission.isGraded ? '#d1fae5' : '#fef3c7',
-                                  color: submission.isGraded ? '#065f46' : '#92400e',
-                                  fontSize: '12px',
-                                  fontWeight: 500
-                                }}>
-                                  {submission.isGraded ? 'Graded' : 'Pending'}
-                                </span>
-                              </td>
-                              <td style={{ padding: '12px', fontSize: '14px', fontWeight: 600 }}>
-                                {submission.isGraded && (submission.score !== undefined || submission.grade !== undefined) 
-                                  ? submission.score !== undefined 
-                                    ? `${submission.score}%`
-                                    : submission.totalPoints
-                                      ? `${((submission.grade / submission.totalPoints) * 100).toFixed(1)}%`
-                                      : `${submission.grade}`
-                                  : 'N/A'}
-                              </td>
-                              <td style={{ padding: '12px', fontSize: '14px' }}>
-                                {submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : 'N/A'}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                <div className="submissions-table-container">
+                  <h4>My Submissions</h4>
+                  <table className="submissions-table">
+                    <thead>
+                      <tr>
+                        <th>Assignment</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Submitted</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentPerformance.submissions.map((submission, idx) => {
+                        const assignment = outputs.find(o => o._id === submission.assignment?._id || o._id === submission.assignment);
+                        return (
+                          <tr key={submission._id || idx}>
+                            <td>
+                              {assignment?.title || 'Unknown Assignment'}
+                            </td>
+                            <td>
+                              <span className={`status-badge ${submission.isGraded ? 'graded' : 'pending'}`}>
+                                {submission.isGraded ? 'Graded' : 'Pending'}
+                              </span>
+                            </td>
+                            <td>
+                              {submission.isGraded && (submission.score !== undefined || submission.grade !== undefined) 
+                                ? submission.score !== undefined 
+                                  ? `${submission.score}%`
+                                  : submission.totalPoints
+                                    ? `${((submission.grade / submission.totalPoints) * 100).toFixed(1)}%`
+                                    : `${submission.grade}`
+                                : 'N/A'}
+                            </td>
+                            <td>
+                              {submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : 'N/A'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
@@ -474,13 +418,7 @@ const StudentLessonView = ({ user }) => {
       )}
 
       {/* Lesson Content */}
-      <div style={{ 
-        background: '#fff', 
-        borderRadius: '8px', 
-        padding: '32px', 
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)'
-      }}>
+      <div className="lesson-content">
         {/* Description */}
         {lesson.description && (
           <div style={{ marginBottom: '32px' }}>
@@ -568,74 +506,42 @@ const StudentLessonView = ({ user }) => {
 
         {/* Files */}
         {lesson.files && lesson.files.length > 0 && (
-          <div style={{ marginBottom: '32px' }}>
-            <h2 style={{ 
-              fontSize: '20px', 
-              fontWeight: 400, 
-              marginBottom: '16px',
-              color: '#202124',
-              fontFamily: "'Google Sans', 'Roboto', sans-serif"
-            }}>
-              Attachments ({lesson.files.length})
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="lesson-section">
+            <h2>Attachments ({lesson.files.length})</h2>
+            <div className="files-list">
               {lesson.files.map((file) => (
                 <div 
                   key={file._id} 
-                  style={{ 
-                    padding: '16px', 
-                    border: '1px solid #e0e0e0', 
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: '#f8f9fa'
-                  }}
+                  className="file-item"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                  <div className="file-item-content">
                     {file.fileType?.startsWith('image/') && viewingPreviews[file._id] && (
                       <img 
                         src={viewingPreviews[file._id]} 
                         alt={file.filename}
-                        style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
+                        className="file-preview"
                       />
                     )}
                     {file.fileType?.startsWith('video/') && viewingPreviews[file._id] && (
                       <video 
                         src={viewingPreviews[file._id]} 
-                        style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
+                        className="file-preview"
                         controls={false}
                       />
                     )}
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 500, color: '#202124' }}>
+                    <div className="file-info">
+                      <p className="file-name">
                         {file.filename}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#5f6368' }}>
+                      </p>
+                      <p className="file-type">
                         {file.fileType || 'Unknown type'}
-                      </div>
+                      </p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleDownloadFile(file._id, file.filename)}
-                    style={{
-                      padding: '8px 16px',
-                      border: '1px solid #dadce0',
-                      borderRadius: '24px',
-                      background: '#fff',
-                      color: '#1a73e8',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#e8f0fe';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = '#fff';
-                    }}
+                    className="btn-file-download"
                   >
                     Download
                   </button>
@@ -647,48 +553,20 @@ const StudentLessonView = ({ user }) => {
 
         {/* Links */}
         {lesson.links && lesson.links.length > 0 && (
-          <div>
-            <h2 style={{ 
-              fontSize: '20px', 
-              fontWeight: 400, 
-              marginBottom: '16px',
-              color: '#202124',
-              fontFamily: "'Google Sans', 'Roboto', sans-serif"
-            }}>
-              Links ({lesson.links.length})
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="lesson-section">
+            <h2>Links ({lesson.links.length})</h2>
+            <div className="links-list">
               {lesson.links.map((link, idx) => (
                 <a
                   key={idx}
                   href={ensureUrl(link.url)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{
-                    padding: '12px 16px',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '8px',
-                    textDecoration: 'none',
-                    color: '#1a73e8',
-                    fontSize: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s',
-                    background: '#f8f9fa'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = '#e8f0fe';
-                    e.target.style.borderColor = '#1a73e8';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = '#f8f9fa';
-                    e.target.style.borderColor = '#e0e0e0';
-                  }}
+                  className="link-item"
                 >
                   <span>🔗</span>
                   <span>{link.label || link.url}</span>
-                  <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#5f6368' }}>→</span>
+                  <span className="link-arrow">→</span>
                 </a>
               ))}
             </div>
@@ -698,76 +576,29 @@ const StudentLessonView = ({ user }) => {
 
       {/* Outputs/Assignments */}
       {outputs.length > 0 && (
-        <div style={{ 
-          background: '#fff', 
-          borderRadius: '8px', 
-          padding: '32px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)'
-        }}>
-          <h2 style={{ 
-            fontSize: '20px', 
-            fontWeight: 400, 
-            marginBottom: '16px',
-            color: '#202124',
-            fontFamily: "'Google Sans', 'Roboto', sans-serif"
-          }}>
-            Related Assignments & Quizzes ({outputs.length})
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="outputs-section">
+          <h2>Related Assignments & Quizzes ({outputs.length})</h2>
+          <div className="outputs-list">
             {outputs.map((output) => (
               <div
                 key={output._id}
-                style={{
-                  padding: '16px',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  transition: 'all 0.2s',
-                  background: '#f8f9fa'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e8f0fe';
-                  e.currentTarget.style.borderColor = '#1a73e8';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#f8f9fa';
-                  e.currentTarget.style.borderColor = '#e0e0e0';
-                }}
+                className={`output-item ${output.type}`}
               >
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '16px', fontWeight: 500, marginBottom: '4px', color: '#202124' }}>
+                <div className="output-info">
+                  <div className="output-title">
                     {output.title}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#5f6368' }}>
-                    {output.type} • {output.dueDate ? `Due: ${new Date(output.dueDate).toLocaleDateString()}` : 'No due date'}
+                  <div className="output-meta">
+                    <span className={`output-type-badge ${output.type}`}>
+                      {output.type}
+                    </span>
+                    {output.dueDate ? `Due: ${new Date(output.dueDate).toLocaleDateString()}` : 'No due date'}
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => navigate(`/student/assignments/${output._id}`)}
-                  style={{
-                    padding: '8px 16px',
-                    border: '1px solid #dadce0',
-                    borderRadius: '6px',
-                    background: '#fff',
-                    color: '#5f6368',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = '#e8f0fe';
-                    e.target.style.borderColor = '#1a73e8';
-                    e.target.style.color = '#1a73e8';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = '#fff';
-                    e.target.style.borderColor = '#dadce0';
-                    e.target.style.color = '#5f6368';
-                  }}
+                  className="btn-output-action"
                 >
                   {output.type === 'quiz' ? 'Take Quiz' : 'View Assignment'}
                 </button>

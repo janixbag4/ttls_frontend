@@ -4,6 +4,7 @@ import axios from 'axios';
 import DOMPurify from 'dompurify';
 import QuizBuilder from './QuizBuilder';
 import './TeacherDashboard.css';
+import '../Shared/LessonView.css';
 import UserAvatar from '../Shared/UserAvatar';
 
 const getPlainText = (html) => {
@@ -937,156 +938,50 @@ const LessonView = () => {
 
       {/* Outputs/Assignments */}
       {outputs.length > 0 && (
-        <div style={{ 
-          background: '#fff', 
-          borderRadius: '8px', 
-          padding: '32px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)'
-        }}>
-          <h2 style={{ 
-            fontSize: '20px', 
-            fontWeight: 400, 
-            marginBottom: '16px',
-            color: '#202124',
-            fontFamily: "'Google Sans', 'Roboto', sans-serif"
-          }}>
-            Related Assignments ({outputs.length})
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="outputs-section">
+          <h2>Related Assignments ({outputs.length})</h2>
+          <div className="outputs-list">
             {outputs.map((output) => (
               <div
                 key={output._id}
-                style={{
-                  padding: '16px',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  transition: 'all 0.2s',
-                  background: '#f8f9fa'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e8f0fe';
-                  e.currentTarget.style.borderColor = '#1a73e8';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#f8f9fa';
-                  e.currentTarget.style.borderColor = '#e0e0e0';
-                }}
+                className={`output-item ${output.type}`}
               >
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '16px', fontWeight: 500, marginBottom: '4px', color: '#202124' }}>
+                <div className="output-info">
+                  <div className="output-title">
                     {output.title}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#5f6368' }}>
-                    {output.type} • {output.dueDate ? `Due: ${new Date(output.dueDate).toLocaleDateString()}` : 'No due date'}
+                  <div className="output-meta">
+                    <span className={`output-type-badge ${output.type}`}>
+                      {output.type}
+                    </span>
+                    {output.dueDate ? `Due: ${new Date(output.dueDate).toLocaleDateString()}` : 'No due date'}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="output-actions-group">
                   <button
                     type="button"
                     onClick={() => handleViewOutput(output)}
-                    style={{
-                      padding: '8px 16px',
-                      border: '1px solid #dadce0',
-                      borderRadius: '6px',
-                      background: '#fff',
-                      color: '#5f6368',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#f8f9fa';
-                      e.target.style.borderColor = '#1a73e8';
-                      e.target.style.color = '#1a73e8';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = '#fff';
-                      e.target.style.borderColor = '#dadce0';
-                      e.target.style.color = '#5f6368';
-                    }}
+                    className="btn-output-action"
                   >
                     View
                   </button>
                   <button
                     type="button"
                     onClick={() => handleEditOutput(output)}
-                    style={{
-                      padding: '8px 16px',
-                      border: '1px solid #dadce0',
-                      borderRadius: '6px',
-                      background: '#fff',
-                      color: '#5f6368',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#e8f0fe';
-                      e.target.style.borderColor = '#1a73e8';
-                      e.target.style.color = '#1a73e8';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = '#fff';
-                      e.target.style.borderColor = '#dadce0';
-                      e.target.style.color = '#5f6368';
-                    }}
+                    className="btn-output-action"
                   >
                     Edit
                   </button>
                   <Link
                     to={`/teacher/submissions?assignmentId=${output._id}`}
-                    style={{
-                      padding: '8px 16px',
-                      border: '1px solid #dadce0',
-                      borderRadius: '6px',
-                      background: '#fff',
-                      color: '#5f6368',
-                      textDecoration: 'none',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      transition: 'all 0.2s',
-                      display: 'inline-block'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#e8f0fe';
-                      e.target.style.borderColor = '#1a73e8';
-                      e.target.style.color = '#1a73e8';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = '#fff';
-                      e.target.style.borderColor = '#dadce0';
-                      e.target.style.color = '#5f6368';
-                    }}
+                    className="link-submission"
                   >
                     Submissions
                   </Link>
                   <button
                     type="button"
                     onClick={() => handleDeleteOutput(output._id)}
-                    style={{
-                      padding: '8px 16px',
-                      border: '1px solid #f87171',
-                      borderRadius: '6px',
-                      background: '#fff',
-                      color: '#dc2626',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#fee2e2';
-                      e.target.style.borderColor = '#dc2626';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = '#fff';
-                      e.target.style.borderColor = '#f87171';
-                    }}
+                    className="btn-output-delete"
                   >
                     🗑️ Delete
                   </button>
