@@ -4,7 +4,7 @@ import './AdminDashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL + '/api';
 
-const UserManagement = ({ user, darkMode }) => {
+const UserManagement = ({ user }) => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -273,7 +273,7 @@ const UserManagement = ({ user, darkMode }) => {
   };
 
   return (
-    <div className={`admin-content ${darkMode ? 'dark-mode' : ''}`}>
+    <div className="admin-content">
       <div className="content-header">
         <h1>User Management</h1>
         <div className="header-actions">

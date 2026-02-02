@@ -12,10 +12,6 @@ import './App.css';
 function App() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    const savedMode = localStorage.getItem('darkMode');
-    return savedMode ? JSON.parse(savedMode) : true; // Default to dark mode
-  });
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -27,13 +23,8 @@ function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(darkMode));
-    if (darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
-  }, [darkMode]);
+    document.documentElement.setAttribute('data-theme', 'light');
+  }, []);
 
   const handleLogin = (userData) => {
     setUser(userData);
@@ -45,10 +36,6 @@ function App() {
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('user');
-  };
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
   };
 
   return (
@@ -97,7 +84,7 @@ function App() {
             path="/admin/*" 
             element={
               isAuthenticated && user?.role === 'admin' ? 
-              <AdminDashboard user={user} onLogout={handleLogout} darkMode={darkMode} toggleDarkMode={toggleDarkMode} /> : 
+              <AdminDashboard user={user} onLogout={handleLogout} /> : 
               <Navigate to="/" />
             } 
           />
@@ -105,7 +92,7 @@ function App() {
             path="/teacher/*" 
             element={
               isAuthenticated && user?.role === 'teacher' ? 
-              <TeacherDashboard user={user} onLogout={handleLogout} darkMode={darkMode} toggleDarkMode={toggleDarkMode} /> : 
+              <TeacherDashboard user={user} onLogout={handleLogout} /> : 
               <Navigate to="/" />
             } 
           />
@@ -113,7 +100,7 @@ function App() {
             path="/student/*" 
             element={
               isAuthenticated && user?.role === 'student' ? 
-              <StudentDashboard user={user} onLogout={handleLogout} darkMode={darkMode} toggleDarkMode={toggleDarkMode} /> : 
+              <StudentDashboard user={user} onLogout={handleLogout} /> : 
               <Navigate to="/" />
             } 
           />

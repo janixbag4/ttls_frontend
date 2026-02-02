@@ -8,7 +8,7 @@ import './AdminDashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL + '/api';
 
-const DashboardContent = ({ pendingUsers, approvedUsers, loading, handleApprove, handleReject, handleDeleteUser, darkMode }) => {
+const DashboardContent = ({ pendingUsers, approvedUsers, loading, handleApprove, handleReject, handleDeleteUser }) => {
   return (
     <div className="dashboard-content" style={{padding:'32px 0 0 0', maxWidth: '1200px', margin: '0 auto', width: '100%'}}>
       <h1 style={{fontWeight:700,letterSpacing:'-1px',fontSize:32,marginBottom:32}}>Admin Dashboard</h1>
@@ -176,7 +176,7 @@ const DashboardContent = ({ pendingUsers, approvedUsers, loading, handleApprove,
   );
 };
 
-const AdminDashboard = ({ user, onLogout, darkMode, toggleDarkMode }) => {
+const AdminDashboard = ({ user, onLogout }) => {
   const [pendingUsers, setPendingUsers] = useState([]);
   const [approvedUsers, setApprovedUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -331,37 +331,6 @@ const AdminDashboard = ({ user, onLogout, darkMode, toggleDarkMode }) => {
               <span>Reports</span>
             </Link>
           </nav>
-          <div className="drawer-theme-toggle">
-            <button 
-              className="drawer-theme-button" 
-              onClick={toggleDarkMode}
-              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {darkMode ? (
-                <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="5"/>
-                    <line x1="12" y1="1" x2="12" y2="3"/>
-                    <line x1="12" y1="21" x2="12" y2="23"/>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                    <line x1="1" y1="12" x2="3" y2="12"/>
-                    <line x1="21" y1="12" x2="23" y2="12"/>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                  </svg>
-                  <span>Light Mode</span>
-                </>
-              ) : (
-                <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                  </svg>
-                  <span>Dark Mode</span>
-                </>
-              )}
-            </button>
-          </div>
           <div className="drawer-logout">
             <button onClick={onLogout} className="btn-logout-classroom">
               Logout
