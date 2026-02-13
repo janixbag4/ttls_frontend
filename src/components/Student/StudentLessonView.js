@@ -311,11 +311,15 @@ const StudentLessonView = ({ user }) => {
     );
   }
 
+  const lessonsPath = lesson?.module?._id
+    ? `/student/modules/${lesson.module._id}`
+    : '/student/modules';
+
   if (!lesson) {
     return (
       <div className="classroom-main" style={{ padding: '48px', textAlign: 'center' }}>
         <p>Lesson not found</p>
-        <Link to="/student/modules" style={{ color: '#1a73e8', textDecoration: 'none' }}>
+        <Link to={lessonsPath} style={{ color: '#1a73e8', textDecoration: 'none' }}>
           ← Back to Lessons
         </Link>
       </div>
@@ -371,7 +375,7 @@ const StudentLessonView = ({ user }) => {
       {/* Header */}
       <div className="lesson-header">
         <Link 
-          to="/student/modules" 
+          to={lessonsPath}
           className="lesson-back-link"
         >
           <span>←</span>

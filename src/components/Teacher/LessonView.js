@@ -115,6 +115,10 @@ const LessonView = () => {
   const [modules, setModules] = useState([]);
   const [editCategory, setEditCategory] = useState('e-module');
   const [editSelectedModule, setEditSelectedModule] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
 
   const token = localStorage.getItem('token');
 
@@ -139,6 +143,7 @@ const LessonView = () => {
     fetchModules();
     fetchLesson();
     fetchOutputsForLesson();
+    fetchComments();
   }, [lessonId]);
 
   const fetchLesson = async () => {
@@ -168,6 +173,77 @@ const LessonView = () => {
       if (json.success) setOutputs(json.data || []);
     } catch (err) {
       console.error('Failed to fetch outputs', err);
+    }
+  };
+
+  const fetchComments = async () => {
+    try {
+      const res = await axios.get(`${apiBase}/api/comments/lesson/${lessonId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.comments) {
+        setComments(res.data.comments);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch comments:', err);
+    }
+  };
+
+  const handlePostComment = async () => {
+    if (!newComment.trim()) return;
+    try {
+      const res = await axios.post(
+        `${apiBase}/api/comments`,
+        {
+          lessonId,
+          content: newComment,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (res.data.comment) {
+        setComments([...comments, res.data.comment]);
+        setNewComment('');
+      }
+    } catch (err) {
+      console.error('Failed to post comment:', err);
+      alert('Failed to post comment');
+    }
+  };
+
+  const handlePostReply = async (parentId) => {
+    if (!replyText.trim()) return;
+    try {
+      const res = await axios.post(
+        `${apiBase}/api/comments`,
+        {
+          lessonId,
+          content: replyText,
+          parentCommentId: parentId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (res.data.comment) {
+        setComments(
+          comments.map((comment) => {
+            if (comment._id === parentId) {
+              return {
+                ...comment,
+                replies: [...(comment.replies || []), res.data.comment],
+              };
+            }
+            return comment;
+          })
+        );
+        setReplyText('');
+        setReplyingTo(null);
+      }
+    } catch (err) {
+      console.error('Failed to post reply:', err);
+      alert('Failed to post reply');
     }
   };
 
@@ -991,6 +1067,123 @@ const LessonView = () => {
           </div>
         </div>
       )}
+
+      {/* Comments Section */}
+      <div
+        style={{
+          marginTop: '32px',
+          padding: '24px',
+          background: '#fff',
+          borderRadius: '12px',
+          boxShadow:
+            '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            maxWidth: 1200,
+            margin: '0 auto',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '18px',
+              fontWeight: 500,
+              marginBottom: 8,
+              color: '#222',
+              letterSpacing: 0.2,
+            }}
+          >
+            Comments{' '}
+            <span style={{ color: '#888', fontWeight: 400 }}>
+              ({comments.length})
+            </span>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handlePostComment();
+            }}
+            style={{
+              display: 'flex',
+              gap: 8,
+              alignItems: 'flex-start',
+              marginBottom: 12,
+            }}
+          >
+            <UserAvatar user={lesson?.createdBy} size={32} />
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add a comment..."
+              style={{
+                flex: 1,
+                minHeight: 36,
+                maxHeight: 80,
+                padding: '8px 12px',
+                border: '1px solid #e0e0e0',
+                borderRadius: 8,
+                fontSize: 14,
+                resize: 'vertical',
+                background: '#f8f9fa',
+              }}
+              rows={1}
+              maxLength={300}
+            />
+            <button
+              type="submit"
+              disabled={!newComment.trim()}
+              style={{
+                background: newComment.trim() ? '#2563eb' : '#e5e7eb',
+                color: newComment.trim() ? '#fff' : '#888',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 14px',
+                fontWeight: 500,
+                fontSize: 15,
+                cursor: newComment.trim() ? 'pointer' : 'not-allowed',
+                transition: 'background 0.2s',
+              }}
+            >
+              Post
+            </button>
+          </form>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            {comments.length === 0 && (
+              <div
+                style={{
+                  color: '#888',
+                  fontSize: 14,
+                  textAlign: 'center',
+                  padding: 16,
+                }}
+              >
+                No comments yet.
+              </div>
+            )}
+            {comments.map((comment) => (
+              <TeacherCommentItem
+                key={comment._id}
+                comment={comment}
+                replyingTo={replyingTo}
+                setReplyingTo={setReplyingTo}
+                replyText={replyText}
+                setReplyText={setReplyText}
+                handlePostReply={handlePostReply}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Output Creation Modal */}
       {isOutputModalOpen && (
@@ -3060,6 +3253,173 @@ const LessonView = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+const TeacherCommentItem = ({
+  comment,
+  replyingTo,
+  setReplyingTo,
+  replyText,
+  setReplyText,
+  handlePostReply,
+}) => {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+        background: '#f8f9fa',
+        borderRadius: 10,
+        padding: '10px 14px',
+        border: '1px solid #e5e7eb',
+        position: 'relative',
+        minHeight: 40,
+      }}
+    >
+      <UserAvatar user={comment.user} size={28} />
+      <div style={{ flex: 1 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 2,
+          }}
+        >
+          <span style={{ fontWeight: 500, fontSize: 14 }}>
+            {comment.user.firstName} {comment.user.lastName}
+          </span>
+          <span style={{ fontSize: 12, color: '#888' }}>
+            {new Date(comment.createdAt).toLocaleDateString()}
+          </span>
+        </div>
+        <div
+          style={{
+            fontSize: 14,
+            color: '#222',
+            marginBottom: 4,
+            whiteSpace: 'pre-line',
+            wordBreak: 'break-word',
+          }}
+        >
+          {comment.content}
+        </div>
+        <div
+          style={{ display: 'flex', gap: 8, alignItems: 'center' }}
+        >
+          <button
+            onClick={() =>
+              setReplyingTo(
+                replyingTo === comment._id ? null : comment._id
+              )
+            }
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#2563eb',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 500,
+              padding: 0,
+            }}
+          >
+            Reply
+          </button>
+        </div>
+        {replyingTo === comment._id && (
+          <div style={{ marginTop: 8 }}>
+            <textarea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="Write a reply..."
+              style={{
+                width: '100%',
+                minHeight: 32,
+                maxHeight: 60,
+                padding: '6px 10px',
+                border: '1px solid #e0e0e0',
+                borderRadius: 6,
+                fontSize: 13,
+                resize: 'vertical',
+                background: '#fff',
+              }}
+              rows={1}
+              maxLength={200}
+            />
+            <div
+              style={{
+                marginTop: 6,
+                display: 'flex',
+                gap: 6,
+              }}
+            >
+              <button
+                onClick={() => handlePostReply(comment._id)}
+                disabled={!replyText.trim()}
+                style={{
+                  padding: '5px 12px',
+                  background: replyText.trim()
+                    ? '#2563eb'
+                    : '#e5e7eb',
+                  color: replyText.trim() ? '#fff' : '#888',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: replyText.trim()
+                    ? 'pointer'
+                    : 'not-allowed',
+                  fontSize: 13,
+                }}
+              >
+                Reply
+              </button>
+              <button
+                onClick={() => {
+                  setReplyingTo(null);
+                  setReplyText('');
+                }}
+                style={{
+                  padding: '5px 12px',
+                  background: '#e5e7eb',
+                  color: '#888',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        {comment.replies && comment.replies.length > 0 && (
+          <div
+            style={{
+              marginTop: 8,
+              paddingLeft: 18,
+              borderLeft: '2px solid #e5e7eb',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+            }}
+          >
+            {comment.replies.map((reply) => (
+              <TeacherCommentItem
+                key={reply._id}
+                comment={reply}
+                replyingTo={replyingTo}
+                setReplyingTo={setReplyingTo}
+                replyText={replyText}
+                setReplyText={setReplyText}
+                handlePostReply={handlePostReply}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
