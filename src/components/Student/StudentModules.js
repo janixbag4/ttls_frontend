@@ -162,7 +162,7 @@ const StudentModules = ({ user }) => {
                 onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
               >
                 <span>←</span>
-                <span>Back to Modules</span>
+                <span>Back to Lessons</span>
               </button>
             )}
             <h2 className="topbar-title">
