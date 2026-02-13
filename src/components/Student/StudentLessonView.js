@@ -72,8 +72,16 @@ const StudentLessonView = ({ user }) => {
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const [isLessonCompleted, setIsLessonCompleted] = useState(false);
+  const [completingLesson, setCompleatingLesson] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const token = localStorage.getItem('token');
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
+  };
 
   useEffect(() => {
     fetchLesson();
@@ -277,6 +285,24 @@ const StudentLessonView = ({ user }) => {
     }
   }, [showPerformance]);
 
+  const markLessonAsComplete = async () => {
+    try {
+      setCompleatingLesson(true);
+      const res = await axios.post(`${apiBase}/api/lessons/${lessonId}/complete`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.success) {
+        setIsLessonCompleted(true);
+        showToast('Lesson marked as complete! 🎉', 'success');
+      }
+    } catch (err) {
+      console.error('Failed to mark lesson as complete:', err);
+      showToast('Failed to mark lesson as complete', 'error');
+    } finally {
+      setCompleatingLesson(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="classroom-main" style={{ padding: '48px', textAlign: 'center' }}>
@@ -290,7 +316,7 @@ const StudentLessonView = ({ user }) => {
       <div className="classroom-main" style={{ padding: '48px', textAlign: 'center' }}>
         <p>Lesson not found</p>
         <Link to="/student/modules" style={{ color: '#1a73e8', textDecoration: 'none' }}>
-          ← Back to Modules
+          ← Back to Lessons
         </Link>
       </div>
     );
@@ -300,6 +326,48 @@ const StudentLessonView = ({ user }) => {
 
   return (
     <div className="classroom-main" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Toast Notification */}
+      {toast.show && (
+        <div 
+          className="toast-notification"
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            backgroundColor: toast.type === 'success' ? '#10b981' : '#ef4444',
+            color: 'white',
+            padding: '16px 24px',
+            borderRadius: '8px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            animation: 'slideIn 0.3s ease-out',
+            fontFamily: "'Google Sans', 'Roboto', sans-serif",
+            fontSize: '14px',
+            fontWeight: 500,
+            maxWidth: '400px'
+          }}
+        >
+          <span style={{ fontSize: '20px', lineHeight: 1 }}>
+            {toast.type === 'success' ? '✓' : '✕'}
+          </span>
+          <span>{toast.message}</span>
+        </div>
+      )}
+      <style>{`
+        @keyframes slideIn {
+          from {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
       {/* Header */}
       <div className="lesson-header">
         <Link 
@@ -307,7 +375,7 @@ const StudentLessonView = ({ user }) => {
           className="lesson-back-link"
         >
           <span>←</span>
-          <span>Back to Modules</span>
+          <span>Back to Lessons</span>
         </Link>
         <div className="lesson-title-section">
           <div className="lesson-title-content">
@@ -328,6 +396,18 @@ const StudentLessonView = ({ user }) => {
             </div>
           </div>
           <div className="lesson-actions">
+            <button
+              type="button"
+              onClick={markLessonAsComplete}
+              disabled={isLessonCompleted || completingLesson}
+              className={`btn-lesson-action ${isLessonCompleted ? 'completed' : ''}`}
+              style={{ 
+                opacity: isLessonCompleted ? 0.7 : 1,
+                cursor: isLessonCompleted ? 'default' : 'pointer'
+              }}
+            >
+              {isLessonCompleted ? '✅ Completed' : completingLesson ? '⏳ Marking...' : '📌 Mark as Complete'}
+            </button>
             <button
               type="button"
               onClick={() => {

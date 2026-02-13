@@ -399,114 +399,48 @@ const StudentDashboard = ({ user, onLogout }) => {
 
         {/* Performance Stats */}
         <div className="dashboard-stats-section">
-          <h2 className="section-title">Performance Overview</h2>
+          <h2 className="section-title">Learning Progress</h2>
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-header">
-                <div className="stat-icon">📚</div>
+                <div className="stat-icon">✅</div>
                 <div className="stat-content">
                   <h3 className="stat-value">{loadingStats ? '...' : `${dashboardStats.completedLessons}/${dashboardStats.totalLessons}`}</h3>
-                  <p className="stat-label">Modules Completed</p>
+                  <p className="stat-label">Lessons Completed</p>
                 </div>
               </div>
-              <div className="stat-chart">
-                {!loadingStats && dashboardStats.charts.progress.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={80}>
-                    <BarChart data={dashboardStats.charts.progress}>
-                      <Bar dataKey="value" fill="var(--active-color)" radius={[4, 4, 0, 0]} />
-                      <XAxis dataKey="date" hide />
-                      <YAxis hide />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'var(--bg-secondary)', 
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '8px',
-                          color: 'var(--text-primary)'
-                        }}
-                        labelStyle={{ color: 'var(--text-primary)' }}
-                        formatter={(value) => [value, 'Activities']}
-                        labelFormatter={(label) => formatDate(label)}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : !loadingStats ? (
-                  <div className="chart-placeholder">No data available</div>
-                ) : null}
+              <div className="stat-footer">
+                <p className="stat-progress-text">
+                  {loadingStats || dashboardStats.totalLessons === 0 ? 'Loading...' : `${Math.round((dashboardStats.completedLessons / dashboardStats.totalLessons) * 100)}% complete`}
+                </p>
               </div>
             </div>
             <div className="stat-card">
               <div className="stat-header">
-                <div className="stat-icon">📝</div>
+                <div className="stat-icon">📤</div>
                 <div className="stat-content">
                   <h3 className="stat-value">{loadingStats ? '...' : dashboardStats.totalSubmissions}</h3>
-                  <p className="stat-label">Total Submissions</p>
+                  <p className="stat-label">Submitted Work</p>
                 </div>
               </div>
-              <div className="stat-chart">
-                {!loadingStats && dashboardStats.charts.submissions.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={80}>
-                    <BarChart data={dashboardStats.charts.submissions}>
-                      <Bar dataKey="value" fill="#34a853" radius={[4, 4, 0, 0]} />
-                      <XAxis dataKey="date" hide />
-                      <YAxis hide />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'var(--bg-secondary)', 
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '8px',
-                          color: 'var(--text-primary)'
-                        }}
-                        labelStyle={{ color: 'var(--text-primary)' }}
-                        formatter={(value) => [value, 'Submissions']}
-                        labelFormatter={(label) => formatDate(label)}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : !loadingStats ? (
-                  <div className="chart-placeholder">No data available</div>
-                ) : null}
+              <div className="stat-footer">
+                <p className="stat-progress-text">
+                  {loadingStats || dashboardStats.totalSubmissions === 0 ? 'No submissions yet' : `${dashboardStats.gradedSubmissions}/${dashboardStats.totalSubmissions} graded`}
+                </p>
               </div>
             </div>
             <div className="stat-card">
               <div className="stat-header">
-                <div className="stat-icon">⭐</div>
+                <div className="stat-icon">🎯</div>
                 <div className="stat-content">
-                  <h3 className="stat-value" style={{ color: dashboardStats.averageGrade > 0 ? getGradeColor(dashboardStats.averageGrade) : 'var(--text-primary)' }}>
-                    {loadingStats ? '...' : dashboardStats.averageGrade > 0 ? `${dashboardStats.averageGrade}%` : 'N/A'}
-                  </h3>
-                  <p className="stat-label">Average Grade</p>
+                  <h3 className="stat-value">{loadingStats ? '...' : dashboardStats.upcomingAssignments}</h3>
+                  <p className="stat-label">Pending Outputs</p>
                 </div>
               </div>
-              <div className="stat-chart">
-                {!loadingStats && dashboardStats.gradedSubmissions > 0 ? (
-                  <div style={{ padding: '16px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                      {dashboardStats.gradedSubmissions} graded
-                    </div>
-                  </div>
-                ) : !loadingStats ? (
-                  <div className="chart-placeholder">No grades yet</div>
-                ) : null}
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-header">
-                <div className="stat-icon">⏰</div>
-                <div className="stat-content">
-                  <h3 className="stat-value" style={{ color: dashboardStats.upcomingAssignments > 0 ? '#fbbc04' : '#34a853' }}>
-                    {loadingStats ? '...' : dashboardStats.upcomingAssignments}
-                  </h3>
-                  <p className="stat-label">Upcoming Outputs</p>
-                </div>
-              </div>
-              <div className="stat-chart">
-                {!loadingStats ? (
-                  <div style={{ padding: '16px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                      {dashboardStats.upcomingAssignments === 0 ? 'All caught up!' : 'Need attention'}
-                    </div>
-                  </div>
-                ) : null}
+              <div className="stat-footer">
+                <p className="stat-progress-text">
+                  {dashboardStats.upcomingAssignments === 0 ? '✨ All caught up!' : '⚠️ Action needed'}
+                </p>
               </div>
             </div>
           </div>
@@ -596,7 +530,13 @@ const StudentDashboard = ({ user, onLogout }) => {
 
         {/* Footer */}
         <footer className="dashboard-footer">
-          <p>About TTL-e Module</p>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px 10px' }}>
+            {/* Copyright Section */}
+              <p style={{ fontSize: '13px', color: '#80868b', marginBottom: '0' }}>
+                © 2025 Passi City - Technology for Teaching and Learning
+              </p>
+          </div>
+           
         </footer>
           </div>
         </div>

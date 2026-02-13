@@ -450,6 +450,13 @@
   font-size: 1rem;
   color: var(--home-text-light);
   font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.stat-sublabel {
+  font-size: 0.875rem;
+  color: var(--home-text-muted);
+  font-weight: 400;
 }
 
 /* Container */

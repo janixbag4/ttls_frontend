@@ -148,42 +148,28 @@ const TeacherProfile = ({ user }) => {
 
   return (
     <div className="classroom-main">
-      {/* Top Bar */}
-      <div className="dashboard-topbar">
-        <div className="topbar-content">
-          <div className="topbar-left">
-            <h2 className="topbar-title">Profile Settings</h2>
-            <p className="topbar-subtitle">Manage your profile picture, cover photo, and bio</p>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-        {/* Cover Photo Section */}
-        <div style={{ marginBottom: '32px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '16px', color: '#202124' }}>
-            Cover Photo
-          </h3>
+      {/* Modern Resume-Style Profile */}
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
+        
+        {/* Header Section with Cover & Avatar */}
+        <div style={{ marginBottom: '32px', position: 'relative' }}>
+          {/* Cover Photo */}
           <div style={{
             position: 'relative',
-            height: '200px',
-            background: coverPhoto ? `url(${coverPhoto})` : '#f0f0f0',
+            height: '160px',
+            background: coverPhoto ? `url(${coverPhoto})` : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            borderRadius: '8px',
-            border: '2px dashed #ddd',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            borderRadius: '16px',
+            border: '2px solid #e0e0e0',
             cursor: 'pointer',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-start',
+            paddingLeft: '32px',
+            paddingBottom: '16px'
           }}>
-            {!coverPhoto && (
-              <div style={{ textAlign: 'center', color: '#666' }}>
-                <div style={{ fontSize: '48px', marginBottom: '8px' }}>📷</div>
-                <div>Click to upload cover photo</div>
-              </div>
-            )}
             <input
               type="file"
               accept="image/*"
@@ -201,191 +187,297 @@ const TeacherProfile = ({ user }) => {
             {coverPhoto && (
               <div style={{
                 position: 'absolute',
-                top: '10px',
-                right: '10px',
-                background: 'rgba(0,0,0,0.7)',
+                top: '8px',
+                right: '8px',
+                background: 'rgba(0,0,0,0.6)',
                 color: 'white',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontSize: '12px'
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 500,
+                backdropFilter: 'blur(4px)'
               }}>
-                Change Cover Photo
+                📷 Change Cover
               </div>
             )}
           </div>
-        </div>
 
-        {/* Profile Picture Section */}
-        <div style={{ marginBottom: '32px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '16px', color: '#202124' }}>
-            Profile Picture
-          </h3>
+          {/* Profile Picture Overlay */}
           <div style={{
-            position: 'relative',
-            width: '120px',
-            height: '120px',
-            borderRadius: '50%',
-            background: profilePicture ? `url(${profilePicture})` : '#f0f0f0',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            border: '4px solid white',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto'
+            position: 'absolute',
+            bottom: '-32px',
+            left: '32px',
+            zIndex: 10
           }}>
-            {!profilePicture && (
-              <div style={{ fontSize: '48px', color: '#666' }}>👨‍🏫</div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleProfilePictureUpload}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                opacity: 0,
-                cursor: 'pointer',
-                borderRadius: '50%'
-              }}
-            />
-            {profilePicture && (
-              <div style={{
-                position: 'absolute',
-                bottom: '5px',
-                right: '5px',
-                background: '#007bff',
-                color: 'white',
-                width: '30px',
-                height: '30px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '16px'
-              }}>
-                ✏️
-              </div>
-            )}
-          </div>
-          <p style={{ textAlign: 'center', marginTop: '12px', color: '#666', fontSize: '14px' }}>
-            Click to {profilePicture ? 'change' : 'upload'} profile picture
-          </p>
-        </div>
-
-        {/* Bio Section */}
-        <div style={{ marginBottom: '32px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '16px', color: '#202124' }}>
-            Bio
-          </h3>
-          {isEditingBio ? (
-            <div>
-              <textarea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell us about yourself..."
+            <div style={{
+              position: 'relative',
+              width: '140px',
+              height: '140px',
+              borderRadius: '16px',
+              background: profilePicture ? `url(${profilePicture})` : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: '5px solid white',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden'
+            }}>
+              {!profilePicture && (
+                <div style={{ fontSize: '64px', opacity: 0.8 }}>👨‍🏫</div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleProfilePictureUpload}
                 style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
                   width: '100%',
-                  minHeight: '120px',
-                  padding: '12px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  resize: 'vertical'
+                  height: '100%',
+                  opacity: 0,
+                  cursor: 'pointer'
                 }}
               />
-              <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={handleSaveBio}
-                  style={{
-                    padding: '8px 16px',
-                    background: '#007bff',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }}
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditingBio(false);
-                    setBio(user?.bio || '');
-                  }}
-                  style={{
-                    padding: '8px 16px',
-                    background: '#6c757d',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div style={{
-                padding: '16px',
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                background: '#f9f9f9',
-                minHeight: '80px',
-                whiteSpace: 'pre-wrap'
-              }}>
-                {bio || 'No bio added yet.'}
-              </div>
-              <button
-                onClick={() => setIsEditingBio(true)}
-                style={{
-                  marginTop: '12px',
-                  padding: '8px 16px',
-                  background: '#28a745',
+              {profilePicture && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '-2px',
+                  right: '-2px',
+                  background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                   color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
-              >
-                {bio ? 'Edit Bio' : 'Add Bio'}
-              </button>
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  border: '3px solid white'
+                }}>
+                  ✏️
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* User Info Display */}
-        <div style={{ marginBottom: '32px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '16px', color: '#202124' }}>
-            Account Information
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div style={{ padding: '16px', border: '1px solid #e0e0e0', borderRadius: '8px', background: '#f9f9f9' }}>
-              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Full Name</div>
-              <div style={{ fontSize: '16px', fontWeight: 500 }}>{user?.firstName} {user?.lastName}</div>
+        {/* Profile Header Info */}
+        <div style={{ marginTop: '80px', marginBottom: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px' }}>
+            <div>
+              <h1 style={{ 
+                margin: '0 0 4px 0', 
+                fontSize: '32px', 
+                fontWeight: 700, 
+                color: '#1a1a1a',
+                letterSpacing: '-0.5px'
+              }}>
+                {user?.firstName} {user?.lastName}
+              </h1>
+              <p style={{ 
+                margin: '0 0 8px 0', 
+                fontSize: '16px', 
+                color: '#f5576c',
+                fontWeight: 600,
+                textTransform: 'capitalize',
+                letterSpacing: '0.5px'
+              }}>
+                {user?.role === 'teacher' ? '👨‍🏫 Educator' : 'Admin'} • ID: {user?.idNumber}
+              </p>
+              <p style={{ 
+                margin: 0, 
+                fontSize: '14px', 
+                color: '#666'
+              }}>
+                {user?.email}
+              </p>
             </div>
-            <div style={{ padding: '16px', border: '1px solid #e0e0e0', borderRadius: '8px', background: '#f9f9f9' }}>
-              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>ID Number</div>
-              <div style={{ fontSize: '16px', fontWeight: 500 }}>{user?.idNumber}</div>
+          </div>
+        </div>
+
+        {/* Two Column Layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '32px' }}>
+          
+          {/* Main Content - Bio Section */}
+          <div>
+            <div style={{
+              background: 'white',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px',
+              padding: '24px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1a1a1a' }}>
+                  📝 Professional Summary
+                </h3>
+                {!isEditingBio && (
+                  <button
+                    onClick={() => setIsEditingBio(true)}
+                    style={{
+                      padding: '6px 12px',
+                      background: '#f5576c',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => e.target.style.background = '#d63852'}
+                    onMouseOut={(e) => e.target.style.background = '#f5576c'}
+                  >
+                    {bio ? 'Edit' : 'Add Bio'}
+                  </button>
+                )}
+              </div>
+
+              {isEditingBio ? (
+                <div>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Share your teaching expertise, qualifications, and passion for education..."
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      fontFamily: 'inherit',
+                      fontSize: '14px',
+                      resize: 'vertical',
+                      minHeight: '120px',
+                      marginBottom: '12px'
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={handleSaveBio}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => e.target.style.opacity = '0.9'}
+                      onMouseOut={(e) => e.target.style.opacity = '1'}
+                    >
+                      ✓ Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingBio(false);
+                        setBio(user?.bio || '');
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#6c757d',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => e.target.style.opacity = '0.9'}
+                      onMouseOut={(e) => e.target.style.opacity = '1'}
+                    >
+                      ✕ Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p style={{
+                  margin: 0,
+                  fontSize: '14px',
+                  color: '#333',
+                  lineHeight: '1.6',
+                  whiteSpace: 'pre-wrap',
+                  minHeight: '80px'
+                }}>
+                  {bio || '✨ No bio yet. Click "Add Bio" to share your professional background!'}
+                </p>
+              )}
             </div>
-            <div style={{ padding: '16px', border: '1px solid #e0e0e0', borderRadius: '8px', background: '#f9f9f9' }}>
-              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Email</div>
-              <div style={{ fontSize: '16px', fontWeight: 500 }}>{user?.email}</div>
+          </div>
+
+          {/* Sidebar - Quick Info */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 4px 12px rgba(245, 87, 108, 0.3)'
+            }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, opacity: 0.9, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Full Name
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: 700 }}>{user?.firstName} {user?.lastName}</div>
             </div>
-            <div style={{ padding: '16px', border: '1px solid #e0e0e0', borderRadius: '8px', background: '#f9f9f9' }}>
-              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Role</div>
-              <div style={{ fontSize: '16px', fontWeight: 500, textTransform: 'capitalize' }}>{user?.role}</div>
+
+            <div style={{
+              background: 'white',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px',
+              padding: '16px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#666', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                📋 ID Number
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#1a1a1a' }}>{user?.idNumber}</div>
+            </div>
+
+            <div style={{
+              background: 'white',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px',
+              padding: '16px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#666', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                📧 Email
+              </div>
+              <div style={{ fontSize: '13px', fontWeight: 500, color: '#f5576c', wordBreak: 'break-word' }}>{user?.email}</div>
+            </div>
+
+            <div style={{
+              background: 'white',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px',
+              padding: '16px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#666', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                👤 Role
+              </div>
+              <div style={{ 
+                fontSize: '14px', 
+                fontWeight: 700, 
+                color: 'white',
+                background: '#f5576c',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                display: 'inline-block',
+                textTransform: 'capitalize',
+                letterSpacing: '0.5px'
+              }}>
+                {user?.role}
+              </div>
             </div>
           </div>
         </div>

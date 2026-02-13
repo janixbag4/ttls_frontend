@@ -12,7 +12,17 @@ const Home = ({ onLogin, initialPanel }) => {
   const [panelSuccess, setPanelSuccess] = useState('');
   const [panelLoading, setPanelLoading] = useState(false);
   const navigate = useNavigate();
-const API_URL = process.env.REACT_APP_API_URL + '/api'; 
+  const API_URL = process.env.REACT_APP_API_URL + '/api';
+  
+  // Real-time stats state
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalModules: 0,
+    totalLessons: 0,
+    satisfactionRate: 98
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+
   const [loginForm, setLoginForm] = useState({
     role: 'student',
     idNumber: '',
@@ -89,6 +99,62 @@ const API_URL = process.env.REACT_APP_API_URL + '/api';
       setPanelMode(initialPanel);
     }
   }, [initialPanel]);
+
+  // Fetch real-time stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setStatsLoading(true);
+        const [usersRes, modulesRes, lessonsRes, settingsRes] = await Promise.all([
+          fetch(`${API_URL}/users/count`).catch(() => ({ ok: false })),
+          fetch(`${API_URL}/modules/count`).catch(() => ({ ok: false })),
+          fetch(`${API_URL}/lessons/count`).catch(() => ({ ok: false })),
+          fetch(`${API_URL}/settings/satisfaction-rate`).catch(() => ({ ok: false }))
+        ]);
+
+        let totalUsers = 0;
+        let totalModules = 0;
+        let totalLessons = 0;
+        let satisfactionRate = 98;
+
+        if (usersRes.ok) {
+          const userData = await usersRes.json();
+          totalUsers = userData.data?.count || 0;
+        }
+        
+        if (modulesRes.ok) {
+          const moduleData = await modulesRes.json();
+          totalModules = moduleData.data?.count || 0;
+        }
+        
+        if (lessonsRes.ok) {
+          const lessonData = await lessonsRes.json();
+          totalLessons = lessonData.data?.count || 0;
+        }
+        
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          satisfactionRate = settingsData.data?.satisfactionRate || 98;
+        }
+
+        setStats({
+          totalUsers,
+          totalModules,
+          totalLessons,
+          satisfactionRate
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchStats();
+    // Refresh stats every 5 minutes
+    const interval = setInterval(fetchStats, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [API_URL]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -511,20 +577,24 @@ const API_URL = process.env.REACT_APP_API_URL + '/api';
         <div className="container">
           <div className="stats-grid">
             <div className="stat-item">
-              <div className="stat-number">1000+</div>
+              <div className="stat-number">{statsLoading ? '...' : stats.totalUsers.toLocaleString()}+</div>
               <div className="stat-label">Active Users</div>
+              <div className="stat-sublabel">Learning together</div>
             </div>
             <div className="stat-item">
-              <div className="stat-number">500+</div>
-              <div className="stat-label">Lessons Created</div>
+              <div className="stat-number">{statsLoading ? '...' : stats.totalModules}</div>
+              <div className="stat-label">Modules Created</div>
+              <div className="stat-sublabel">Ready to explore</div>
             </div>
             <div className="stat-item">
-              <div className="stat-number">50+</div>
-              <div className="stat-label">Instructors</div>
+              <div className="stat-number">{statsLoading ? '...' : stats.totalLessons}</div>
+              <div className="stat-label">Lessons Available</div>
+              <div className="stat-sublabel">Engaging content</div>
             </div>
             <div className="stat-item">
-              <div className="stat-number">98%</div>
+              <div className="stat-number">{statsLoading ? '...' : stats.satisfactionRate}%</div>
               <div className="stat-label">Satisfaction Rate</div>
+              <div className="stat-sublabel" style={{ fontSize: '12px' }}>Based on user feedback</div>
             </div>
           </div>
         </div>

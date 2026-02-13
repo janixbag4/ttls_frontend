@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import TeacherDashboard from './components/Teacher/TeacherDashboard';
 import StudentDashboard from './components/Student/StudentDashboard';
@@ -9,9 +9,22 @@ import Home from './components/Home/Home';
 import InstallPWA from './components/InstallPWA'; // ADD THIS
 import './App.css';
 
+// Route persistence component
+function RouteTracker() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Save current route to localStorage whenever it changes
+    localStorage.setItem('lastRoute', location.pathname + location.search);
+  }, [location]);
+  
+  return null;
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [redirectPath, setRedirectPath] = useState(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -19,6 +32,12 @@ function App() {
       const userData = JSON.parse(storedUser);
       setUser(userData);
       setIsAuthenticated(true);
+      
+      // Get the last route and redirect if it exists
+      const lastRoute = localStorage.getItem('lastRoute');
+      if (lastRoute && lastRoute !== '/' && lastRoute !== '/login' && lastRoute !== '/signup') {
+        setRedirectPath(lastRoute);
+      }
     }
   }, []);
 
@@ -42,6 +61,7 @@ function App() {
   return (
     <Router>
       <div className="App">
+        <RouteTracker />
         <InstallPWA />
         <ToastContainer
           position="top-right"
@@ -60,7 +80,7 @@ function App() {
             path="/" 
             element={
               isAuthenticated ? 
-              <Navigate to={`/${user?.role}`} /> : 
+              (redirectPath ? <Navigate to={redirectPath} /> : <Navigate to={`/${user?.role}`} />) : 
               <Home onLogin={handleLogin} />
             } 
           />
