@@ -348,7 +348,7 @@ const Home = ({ onLogin, initialPanel }) => {
                 <h1 className="hero-title">{slide.title}</h1>
                 <p className="hero-subtitle">{slide.subtitle}</p>
                 <div className="hero-cta">
-                  <button onClick={() => openPanel('signup')} className="btn-hero-primary">Get Started Free</button>
+                  <button onClick={() => openPanel('signup')} className="btn-hero-primary">Get Started</button>
                   <button onClick={() => openPanel('login')} className="btn-hero-secondary">Sign In</button>
                 </div>
               </div>
@@ -858,7 +858,7 @@ const Home = ({ onLogin, initialPanel }) => {
             Join thousands of educators and students who are revolutionizing education through technology
           </p>
           <div className="cta-buttons">
-            <button onClick={() => openPanel('signup')} className="btn-cta primary">Start Free Trial</button>
+            <button onClick={() => openPanel('signup')} className="btn-cta primary">Get Started</button>
             <button onClick={() => openPanel('login')} className="btn-cta secondary">Login to Account</button>
           </div>
         </div>

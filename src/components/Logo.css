@@ -2,12 +2,17 @@
 .pcc-logo {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
+}
+
+.pcc-logo svg {
+  width: 80px;
+  height: 80px;
 }
 
 .logo-text h3 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: var(--text-primary, #1e3a8a);
   font-weight: bold;
 }
@@ -16,4 +21,19 @@
   margin: 0;
   font-size: 0.8rem;
   color: var(--text-secondary, #5f6368);
+}
+
+@media (max-width: 768px) {
+  .pcc-logo svg {
+    width: 72px;
+    height: 72px;
+  }
+
+  .logo-text h3 {
+    font-size: 1.05rem;
+  }
+
+  .logo-text p {
+    font-size: 0.75rem;
+  }
 }

@@ -75,7 +75,6 @@
 
 @media (min-width: 769px) {
   .nav-container {
-    padding: 20px 50px;
     gap: 30px;
   }
 }
@@ -208,6 +207,7 @@
   transition: all 0.3s ease;
   border: 2px solid transparent;
   min-height: 44px;
+  min-width: 90px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -227,16 +227,35 @@
 }
 
 @media (max-width: 768px) {
+  .nav-container {
+    flex-wrap: nowrap;
+    padding: 10px 12px;
+    gap: 8px;
+    justify-content: flex-start; /* keep logo group anchored to the left */
+  }
+
+  /* Hide center links on mobile to free space for buttons */
+  .nav-menu-links {
+    display: none;
+  }
+
+  .nav-actions {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-left: auto; /* push buttons to the far right, using middle space */
+  }
+
   .btn-nav {
-    width: 100%;
-    padding: 12px 24px;
-    margin: 8px 16px 0;
+    width: auto;
+    padding: 8px 12px;
+    margin: 0;
+    font-size: 12px;
+    min-width: 70px;
   }
 
   .nav-actions .btn-nav {
-    width: auto;
-    margin: 0;
-    flex: 1;
+    flex: 0 0 90px; /* fixed width so Login and Sign Up match */
   }
 }
 
@@ -1267,16 +1286,25 @@
 
 @media (max-width: 768px) {
   .nav-container {
-    flex-wrap: wrap;
-    padding: 15px 20px;
+    flex-wrap: nowrap;
+    padding: 10px 16px;
   }
 
+  /* Hide top nav links on mobile for a cleaner, smaller header */
   .nav-menu-links {
-    order: 3;
-    width: 100%;
-    margin-top: 15px;
-    justify-content: space-around;
-    flex-wrap: wrap;
+    display: none;
+  }
+
+  .nav-actions {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .nav-actions .btn-nav {
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    font-size: 13px;
   }
 
   .hero-section {
