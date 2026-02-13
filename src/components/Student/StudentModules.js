@@ -20,7 +20,7 @@ const StudentModules = ({ user }) => {
   const [viewMode, setViewMode] = useState('modules');
   const [selectedCategory, setSelectedCategory] = useState('e-module');
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('latest'); // 'latest' or 'title'
+  const [sortBy, setSortBy] = useState('oldest'); // 'oldest', 'latest' or 'title'
   const [dateFilter, setDateFilter] = useState('all-time'); // 'all-time' or 'recent'
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -29,18 +29,32 @@ const StudentModules = ({ user }) => {
 
   const fetchModules = async () => {
     try {
+      if (!token) {
+        console.error('No token found in localStorage. Please log in first.');
+        return;
+      }
       const res = await axios.get(`${apiBase}/api/modules?category=${selectedCategory}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setModules(res.data.data || []);
     } catch (err) {
       console.error('Failed to fetch modules:', err);
+      if (err.response?.status === 401) {
+        console.error('Authentication failed. Token may be invalid or expired. Please log in again.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
   };
 
   const fetchLessons = async (moduleId = null) => {
     try {
-      const params = moduleId ? { moduleId } : {};
+      if (!token) {
+        console.error('No token found in localStorage. Please log in first.');
+        return;
+      }
+      const params = {};
+      if (moduleId) params.module = moduleId;
       if (selectedCategory) params.category = selectedCategory;
       const res = await axios.get(`${apiBase}/api/lessons`, {
         params,
@@ -49,6 +63,11 @@ const StudentModules = ({ user }) => {
       setLessons(res.data.data || []);
     } catch (err) {
       console.error('Failed to fetch lessons:', err);
+      if (err.response?.status === 401) {
+        console.error('Authentication failed. Token may be invalid or expired. Please log in again.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
   };
 
@@ -84,7 +103,9 @@ const StudentModules = ({ user }) => {
     }
     
     // Apply sorting
-    if (sortBy === 'latest') {
+    if (sortBy === 'oldest') {
+      list.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    } else if (sortBy === 'latest') {
       list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     } else if (sortBy === 'title') {
       list.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
@@ -276,7 +297,8 @@ const StudentModules = ({ user }) => {
                 e.target.style.boxShadow = 'none';
               }}
             >
-              <option value="latest">Latest</option>
+              <option value="oldest">Oldest First</option>
+              <option value="latest">Latest First</option>
               <option value="title">Title</option>
             </select>
             <select
@@ -324,7 +346,7 @@ const StudentModules = ({ user }) => {
             <>
               <div className="classes-grid">
                 {paginatedModules.map((m, index) => {
-                  const moduleLessons = lessons.filter(l => l.folder?._id === m._id || l.folder === m._id);
+                  const moduleLessons = lessons.filter(l => l.module?._id === m._id || l.module === m._id);
                   // Module cover photo logic (like teacher)
                   const coverUrl = m.coverPhoto ? (typeof m.coverPhoto === 'string' && m.coverPhoto.startsWith('http') ? m.coverPhoto : `${apiBase}/modules/${m._id}/cover`) : null;
                   return (
