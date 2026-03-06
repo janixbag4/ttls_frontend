@@ -165,9 +165,16 @@ const StudentProgressReport = ({ user }) => {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 600, marginBottom: '8px' }}>Your Progress</h1>
-        <p style={{ color: '#6b7280', fontSize: '15px' }}>Track your assignments and lesson completion</p>
+      {/* Header */}
+      <div style={{ 
+        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        borderRadius: '12px',
+        padding: '20px 24px',
+        marginBottom: '24px',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+      }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'white' }}>Your Progress Report</h2>
+        <p style={{ fontSize: '13px', margin: '4px 0 0 0', opacity: 0.9, color: 'white' }}>Track your assignments and lesson completion</p>
       </div>
 
       {/* Tab Navigation */}

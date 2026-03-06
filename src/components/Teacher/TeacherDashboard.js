@@ -325,7 +325,12 @@ const TeacherDashboard = ({ user, onLogout }) => {
 
           {/* Footer */}
           <footer className="dashboard-footer">
-            <p>About TTL-e Module</p>
+            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px 10px' }}>
+              {/* Copyright Section */}
+                <p style={{ fontSize: '13px', color: '#80868b', marginBottom: '0' }}>
+                  © 2025 Passi City - Technology for Teaching and Learning
+                </p>
+            </div>
           </footer>
         </div>
       </>
@@ -481,6 +486,13 @@ const TeacherDashboard = ({ user, onLogout }) => {
               <span>Dashboard</span>
             </Link>
             <Link 
+              to="/teacher/guidelines" 
+              className={`drawer-nav-item ${location.pathname.includes('/guidelines') ? 'active' : ''}`}
+            >
+              <span>📋</span>
+              <span>Guidelines</span>
+            </Link>
+            <Link 
               to="/teacher/lessons" 
               className={`drawer-nav-item ${location.pathname.includes('/lessons') ? 'active' : ''}`}
             >
@@ -502,25 +514,18 @@ const TeacherDashboard = ({ user, onLogout }) => {
               <span>Progress Report</span>
             </Link>
             <Link 
-              to="/teacher/reports" 
-              className={`drawer-nav-item ${location.pathname.includes('/reports') ? 'active' : ''}`}
-            >
-              <span>🚨</span>
-              <span>Reports & Feedback</span>
-            </Link>
-            <Link 
-              to="/teacher/guidelines" 
-              className={`drawer-nav-item ${location.pathname.includes('/guidelines') ? 'active' : ''}`}
-            >
-              <span>📋</span>
-              <span>Guidelines</span>
-            </Link>
-            <Link 
               to="/teacher/profile" 
               className={`drawer-nav-item ${location.pathname.includes('/profile') ? 'active' : ''}`}
             >
               <span>👤</span>
               <span>Profile</span>
+            </Link>
+            <Link 
+              to="/teacher/reports" 
+              className={`drawer-nav-item ${location.pathname.includes('/reports') ? 'active' : ''}`}
+            >
+              <span>🚨</span>
+              <span>Reports & Feedback</span>
             </Link>
           </nav>
           <div className="drawer-logout">

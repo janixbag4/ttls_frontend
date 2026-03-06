@@ -730,18 +730,18 @@ const StudentDashboard = ({ user, onLogout }) => {
               <span>Submissions</span>
             </Link>
             <Link 
-              to="/student/profile" 
-              className={`drawer-nav-item ${location.pathname.includes('/profile') ? 'active' : ''}`}
-            >
-              <span>👤</span>
-              <span>Profile</span>
-            </Link>
-            <Link 
               to="/student/progress"
               className={`drawer-nav-item ${location.pathname.includes('/progress') ? 'active' : ''}`}
             >
               <span>📊</span>
               <span>Progress Report</span>
+            </Link>
+            <Link 
+              to="/student/profile" 
+              className={`drawer-nav-item ${location.pathname.includes('/profile') ? 'active' : ''}`}
+            >
+              <span>👤</span>
+              <span>Profile</span>
             </Link>
             <Link 
               to="/student/reports"

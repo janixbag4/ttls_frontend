@@ -289,6 +289,16 @@ const Home = ({ onLogin, initialPanel }) => {
     }
   };
 
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
   return (
     <div className={`home-page ${darkMode ? 'dark' : 'light'}`}>
       {/* Navigation */}
@@ -296,10 +306,10 @@ const Home = ({ onLogin, initialPanel }) => {
         <div className="nav-container">
           <Logo />
           <div className="nav-menu-links">
-            <a href="#about" className="nav-link">About</a>
-            <a href="#video" className="nav-link">Introduction</a>
-            <a href="#features" className="nav-link">Features</a>
-            <a href="#author" className="nav-link">Author</a>
+            <button onClick={() => scrollToSection('about')} className="nav-link">About</button>
+            <button onClick={() => scrollToSection('video')} className="nav-link">Introduction</button>
+            <button onClick={() => scrollToSection('features')} className="nav-link">Features</button>
+            <button onClick={() => scrollToSection('author')} className="nav-link">Author</button>
           </div>
           <div className="nav-actions">
             {/*
@@ -762,11 +772,17 @@ const Home = ({ onLogin, initialPanel }) => {
               <h3>Progress Tracking</h3>
               <p>Monitor student progress with detailed analytics, completion rates, and performance metrics in real-time.</p>
             </div>
+
+            {/*
             <div className="feature-card">
               <div className="feature-icon">🎓</div>
               <h3>Certification</h3>
               <p>Track competencies and achievements with comprehensive progress reports and certification pathways.</p>
+            
             </div>
+            */}
+
+
           </div>
         </div>
       </section>
@@ -832,7 +848,7 @@ const Home = ({ onLogin, initialPanel }) => {
               </div>
 
               <div className="author-box journey">
-                <h3>Sample Journey</h3>
+                <h3>Journey</h3>
                 <p>
                   Ceasy began this project as a teacher looking for a better way to organize lessons,
                   activities, and student outputs. Over time, it grew into a full research platform
@@ -851,18 +867,25 @@ const Home = ({ onLogin, initialPanel }) => {
       </section>
 
       {/* Call to Action */}
+
+       {/* 
       <section className="cta-section">
         <div className="container">
+
+         
           <h2 className="cta-title">Ready to Transform Your Teaching?</h2>
           <p className="cta-subtitle">
             Join thousands of educators and students who are revolutionizing education through technology
           </p>
+         
+
           <div className="cta-buttons">
             <button onClick={() => openPanel('signup')} className="btn-cta primary">Get Started</button>
             <button onClick={() => openPanel('login')} className="btn-cta secondary">Login to Account</button>
           </div>
         </div>
       </section>
+        */}
 
       {/* Footer */}
       <footer className="home-footer">
@@ -875,10 +898,10 @@ const Home = ({ onLogin, initialPanel }) => {
             <div className="footer-section">
               <h4>Quick Links</h4>
               <ul>
-                <li><a href="#about">About Us</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#author">Author</a></li>
-                <li><button onClick={() => openPanel('login')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0 }}>Login</button></li>
+                <li><button onClick={() => scrollToSection('about')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontFamily: 'inherit' }}>About Us</button></li>
+                <li><button onClick={() => scrollToSection('features')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontFamily: 'inherit' }}>Features</button></li>
+                <li><button onClick={() => scrollToSection('author')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontFamily: 'inherit' }}>Author</button></li>
+                <li><button onClick={() => openPanel('login')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, fontSize: 'inherit', fontFamily: 'inherit' }}>Login</button></li>
               </ul>
             </div>
             <div className="footer-section">
