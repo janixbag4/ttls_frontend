@@ -14,6 +14,8 @@ const TeacherSubmissions = ({ user }) => {
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [assignmentDetails, setAssignmentDetails] = useState(null); // For quiz details when grading
   const [grade, setGrade] = useState('');
+  const [totalScore, setTotalScore] = useState('');
+  const [gradePercentage, setGradePercentage] = useState('');
   const [feedback, setFeedback] = useState('');
   const [answerGrades, setAnswerGrades] = useState({}); // questionId -> { points, feedback, isCorrect }
   const [loading, setLoading] = useState(false);
@@ -69,6 +71,8 @@ const TeacherSubmissions = ({ user }) => {
     setSelectedAssignment(assignment);
     setSelectedSubmission(null);
     setGrade('');
+    setTotalScore('');
+    setGradePercentage('');
     setFeedback('');
     setAnswerGrades({});
     await Promise.all([
@@ -80,7 +84,31 @@ const TeacherSubmissions = ({ user }) => {
   const handleSelectSubmission = async (submission) => {
     setSelectedSubmission(submission);
     setShowPreviousSubmission(false);
-    setGrade(submission.grade !== undefined && submission.grade !== null ? submission.grade.toString() : '');
+    const gradeValue = submission.grade !== undefined && submission.grade !== null ? submission.grade.toString() : '';
+    
+    // Priority: use submission.totalScore if it exists, otherwise use assignment totalPoints only if submission hasn't been graded
+    let totalScoreValue = '';
+    if (submission.totalScore) {
+      totalScoreValue = submission.totalScore.toString();
+    } else if (submission.isGraded && submission.grade) {
+      // If already graded, default to a reasonable value if not saved
+      totalScoreValue = (selectedAssignment?.totalPoints || 100).toString();
+    } else {
+      // For ungraded submissions, use assignment totalPoints
+      totalScoreValue = (selectedAssignment?.totalPoints || 100).toString();
+    }
+    
+    setGrade(gradeValue);
+    setTotalScore(totalScoreValue);
+    
+    // Auto-calculate or use provided grade percentage
+    let gradePercentageValue = '';
+    if (submission.gradePercentage) {
+      gradePercentageValue = submission.gradePercentage.toString();
+    } else if (gradeValue && totalScoreValue) {
+      gradePercentageValue = ((Number(gradeValue) / Number(totalScoreValue)) * 100).toFixed(2);
+    }
+    setGradePercentage(gradePercentageValue);
     setFeedback(submission.feedback || '');
     
     // Fetch assignment details if it's a quiz
@@ -148,9 +176,9 @@ const TeacherSubmissions = ({ user }) => {
         }));
         
         // Calculate total grade from individual answers
-        const totalScore = answers.reduce((sum, a) => sum + (a.points || 0), 0);
+        const calculatedTotalScore = answers.reduce((sum, a) => sum + (a.points || 0), 0);
         if (!grade) {
-          setGrade(totalScore.toString());
+          setGrade(calculatedTotalScore.toString());
         }
       }
       
@@ -162,6 +190,8 @@ const TeacherSubmissions = ({ user }) => {
         },
         body: JSON.stringify({
           grade: grade ? Number(grade) : undefined,
+          totalScore: totalScore ? Number(totalScore) : undefined,
+          gradePercentage: gradePercentage ? Number(gradePercentage) : undefined,
           feedback: feedback || undefined,
           answers: answers,
         }),
@@ -176,6 +206,7 @@ const TeacherSubmissions = ({ user }) => {
         setSelectedSubmission(null);
         setAssignmentDetails(null);
         setGrade('');
+        setGradePercentage('');
         setFeedback('');
         setAnswerGrades({});
       } else {
@@ -209,19 +240,20 @@ const TeacherSubmissions = ({ user }) => {
     }
   };
 
-  const handleDeleteSubmission = async () => {
+  const handleDeleteGrade = async () => {
     if (!selectedSubmission || !selectedAssignment) return;
     
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete the submission from ${selectedSubmission.student?.firstName} ${selectedSubmission.student?.lastName}? This action cannot be undone.`
+      `Are you sure you want to delete the grade for ${selectedSubmission.student?.firstName} ${selectedSubmission.student?.lastName}? The submission will remain but the grade will be removed.`
     );
     
     if (!confirmDelete) return;
 
     setLoading(true);
     try {
+      const assignmentId = selectedSubmission.assignment?._id || selectedSubmission.assignment;
       const res = await fetch(
-        `${apiBase}/activities/${selectedAssignment._id}/submissions/${selectedSubmission._id}`,
+        `${apiBase}/assignments/${assignmentId}/submissions/${selectedSubmission._id}/grade`,
         {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
@@ -231,12 +263,78 @@ const TeacherSubmissions = ({ user }) => {
       if (json.success) {
         // Refresh submissions list
         await Promise.all([
-          fetchSubmissions(selectedAssignment._id),
-          fetchStatistics(selectedAssignment._id),
+          fetchSubmissions(assignmentId),
+          fetchStatistics(assignmentId),
         ]);
         setSelectedSubmission(null);
         setAssignmentDetails(null);
         setGrade('');
+        setTotalScore('');
+        setGradePercentage('');
+        setFeedback('');
+        setAnswerGrades({});
+        setShowSuccessModal(true);
+      } else {
+        alert(json.message || 'Failed to delete grade');
+      }
+    } catch (err) {
+      console.error('Failed to delete grade', err);
+      alert('Failed to delete grade');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteSubmission = async () => {
+    if (!selectedSubmission) return;
+    
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete the submission from ${selectedSubmission.student?.firstName} ${selectedSubmission.student?.lastName}? This action cannot be undone.`
+    );
+    
+    if (!confirmDelete) return;
+
+    setLoading(true);
+    try {
+      const assignmentId = selectedSubmission.assignment?._id || selectedSubmission.assignment || selectedAssignment?._id;
+      if (!assignmentId) {
+        alert('Unable to determine assignment. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      const res = await fetch(
+        `${apiBase}/assignments/${assignmentId}/submissions/${selectedSubmission._id}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      // Check if response is JSON
+      const contentType = res.headers.get('content-type');
+      const isJson = contentType && contentType.includes('application/json');
+      
+      if (!isJson) {
+        alert('Server error. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      const json = await res.json();
+      if (json.success) {
+        // Refresh submissions list
+        if (selectedAssignment) {
+          await Promise.all([
+            fetchSubmissions(selectedAssignment._id),
+            fetchStatistics(selectedAssignment._id),
+          ]);
+        }
+        setSelectedSubmission(null);
+        setAssignmentDetails(null);
+        setGrade('');
+        setTotalScore('');
+        setGradePercentage('');
         setFeedback('');
         setAnswerGrades({});
         setShowSuccessModal(true);
@@ -259,59 +357,25 @@ const TeacherSubmissions = ({ user }) => {
           <div className="topbar-left">
             <h2 className="topbar-title">Submissions & Grading</h2>
             <p className="topbar-subtitle">
-              View student submissions, grade their work, and track progress statistics.
+              Grade student submissions and track progress
             </p>
           </div>
         </div>
       </div>
 
-      {/* Quick Access Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginTop: '24px', marginBottom: '32px' }}>
-        <div style={{
-          background: 'var(--bg-secondary)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-          transition: 'box-shadow 0.2s'
-        }}>
-          <div style={{ fontSize: 32, fontWeight: 700, color: '#667eea', marginBottom: 4 }}>
-            {assignments.length}
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>Outputs Created</div>
-        </div>
-        <div style={{
-          background: 'var(--bg-secondary)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-          transition: 'box-shadow 0.2s'
-        }}>
-          <div style={{ fontSize: 32, fontWeight: 700, color: '#10b981', marginBottom: 4 }}>
-            {submissions.length}
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>Total Submissions</div>
-        </div>
-        <div style={{
-          background: 'var(--bg-secondary)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-          transition: 'box-shadow 0.2s'
-        }}>
-          <div style={{ fontSize: 32, fontWeight: 700, color: '#f59e0b', marginBottom: 4 }}>
-            {submissions.filter(s => s.grade !== undefined && s.grade !== null).length}
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>Submissions Graded</div>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', marginTop: '24px' }}>
         {/* Left: Assignment List */}
         <div>
-          <h3 className="section-title" style={{ marginBottom: '16px' }}>Project Outputs</h3>
+          <div style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            marginBottom: '12px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            Outputs ({assignments.length})
+          </div>
           {assignments.length === 0 ? (
             <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 14 }}>
               No assignments created yet.
@@ -322,18 +386,19 @@ const TeacherSubmissions = ({ user }) => {
               border: '1px solid var(--border-color)', 
               borderRadius: '12px', 
               overflow: 'hidden',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
             }}>
               {assignments.map((a) => (
                 <div
                   key={a._id}
                   onClick={() => handleSelectAssignment(a)}
                   style={{
-                    padding: '16px',
+                    padding: '14px 16px',
                     borderBottom: '1px solid var(--border-color)',
                     cursor: 'pointer',
-                    backgroundColor: selectedAssignment?._id === a._id ? 'var(--active-bg)' : 'var(--bg-secondary)',
+                    backgroundColor: selectedAssignment?._id === a._id ? '#e8f0fe' : 'var(--bg-secondary)',
                     transition: 'background-color 0.2s',
+                    borderLeft: selectedAssignment?._id === a._id ? '3px solid #1a73e8' : '3px solid transparent'
                   }}
                   onMouseEnter={(e) => {
                     if (selectedAssignment?._id !== a._id) {
@@ -346,15 +411,10 @@ const TeacherSubmissions = ({ user }) => {
                     }
                   }}
                 >
-                  <div style={{ fontWeight: 500, marginBottom: 4, fontSize: 14, color: 'var(--text-primary)' }}>{a.title}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                  <div style={{ fontWeight: 500, marginBottom: 4, fontSize: 13, color: 'var(--text-primary)' }}>{a.title}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
                     {a.type} • {a.dueDate ? new Date(a.dueDate).toLocaleDateString() : 'No due date'}
                   </div>
-                  {a.lesson && (
-                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4, opacity: 0.7 }}>
-                      Lesson: {a.lesson.title || 'N/A'}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -372,41 +432,54 @@ const TeacherSubmissions = ({ user }) => {
               borderRadius: '12px',
               border: '1px solid var(--border-color)'
             }}>
-              <p>Select a project output to view submissions and statistics</p>
+              <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>Select a project output</div>
+              <p style={{ margin: 0, fontSize: 13 }}>Choose an output from the left to view and grade submissions</p>
             </div>
           ) : (
             <>
-              {/* Statistics Card */}
+              {/* Assignment Header with Stats */}
               {statistics && (
                 <div
                   style={{
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-color)',
+                    background: 'linear-gradient(135deg, #1a73e8 0%, #1e88e5 100%)',
                     borderRadius: '12px',
-                    padding: '20px',
+                    padding: '24px',
                     marginBottom: '20px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                    color: 'white',
+                    boxShadow: '0 2px 8px rgba(26, 115, 232, 0.2)'
                   }}
                 >
-                  <h3 className="section-title" style={{ marginBottom: '16px', fontSize: 18 }}>Output Statistics</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: 18, fontWeight: 500 }}>{selectedAssignment.title}</h3>
+                    <p style={{ margin: 0, fontSize: 13, opacity: 0.9 }}>
+                      {selectedAssignment.type} • Due: {selectedAssignment.dueDate ? new Date(selectedAssignment.dueDate).toLocaleDateString() : 'No due date'}
+                    </p>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
                     <div>
-                      <div style={{ fontSize: 28, fontWeight: 400, color: 'var(--active-color)', fontFamily: "'Google Sans', 'Roboto', sans-serif" }}>
+                      <div style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>
                         {statistics.total}
                       </div>
-                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>Total Submissions</div>
+                      <div style={{ fontSize: 12, opacity: 0.9 }}>Total Submissions</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 28, fontWeight: 400, color: '#34a853', fontFamily: "'Google Sans', 'Roboto', sans-serif" }}>
+                      <div style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>
                         {statistics.graded}
                       </div>
-                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>Graded</div>
+                      <div style={{ fontSize: 12, opacity: 0.9 }}>Graded</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 28, fontWeight: 400, color: '#fbbc04', fontFamily: "'Google Sans', 'Roboto', sans-serif" }}>
+                      <div style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>
                         {statistics.ungraded}
                       </div>
-                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>Pending</div>
+                      <div style={{ fontSize: 12, opacity: 0.9 }}>Pending</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>
+                        {statistics.total > 0 ? Math.round((statistics.graded / statistics.total) * 100) : 0}%
+                      </div>
+                      <div style={{ fontSize: 12, opacity: 0.9 }}>Completion</div>
                     </div>
                   </div>
                 </div>
@@ -414,7 +487,17 @@ const TeacherSubmissions = ({ user }) => {
 
               {/* Submissions List */}
               <div>
-                <h3 className="section-title" style={{ marginBottom: '16px' }}>Submissions ({submissions.length})</h3>
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Student Submissions ({submissions.length})
+                  </div>
+                </div>
                 {submissions.length === 0 ? (
                   <div style={{ 
                     padding: '24px', 
@@ -432,7 +515,7 @@ const TeacherSubmissions = ({ user }) => {
                     border: '1px solid var(--border-color)', 
                     borderRadius: '12px', 
                     overflow: 'hidden',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
                   }}>
                     {submissions.map((s) => (
                       <div
@@ -442,7 +525,7 @@ const TeacherSubmissions = ({ user }) => {
                           padding: '16px',
                           borderBottom: '1px solid var(--border-color)',
                           cursor: 'pointer',
-                          backgroundColor: selectedSubmission?._id === s._id ? 'var(--active-bg)' : 'var(--bg-secondary)',
+                          backgroundColor: selectedSubmission?._id === s._id ? '#e8f0fe' : 'var(--bg-secondary)',
                           transition: 'background-color 0.2s',
                         }}
                         onMouseEnter={(e) => {
@@ -487,32 +570,47 @@ const TeacherSubmissions = ({ user }) => {
                           </div>
                           <div>
                             {s.grade !== undefined && s.grade !== null ? (
-                              <span
-                                style={{
-                                  padding: '6px 12px',
-                                  borderRadius: '16px',
-                                  fontSize: 13,
-                                  fontWeight: 500,
-                                  backgroundColor:
-                                    s.grade >= 90
-                                      ? '#d1fae5'
-                                      : s.grade >= 80
-                                      ? '#dbeafe'
-                                      : s.grade >= 70
-                                      ? '#fef3c7'
-                                      : '#fee2e2',
-                                  color:
-                                    s.grade >= 90
-                                      ? '#065f46'
-                                      : s.grade >= 80
-                                      ? '#1e40af'
-                                      : s.grade >= 70
-                                      ? '#92400e'
-                                      : '#991b1b',
-                                }}
-                              >
-                                {s.grade}
-                              </span>
+                              <div>
+                                {(() => {
+                                  const percentage = (s.grade / (s.totalScore || 100)) * 100;
+                                  return (
+                                    <span
+                                      style={{
+                                        padding: '6px 12px',
+                                        borderRadius: '16px',
+                                        fontSize: 13,
+                                        fontWeight: 500,
+                                        backgroundColor:
+                                          percentage >= 90
+                                            ? '#d1fae5'
+                                            : percentage >= 80
+                                            ? '#dbeafe'
+                                            : percentage >= 70
+                                            ? '#fef3c7'
+                                            : '#fee2e2',
+                                        color:
+                                          percentage >= 90
+                                            ? '#065f46'
+                                            : percentage >= 80
+                                            ? '#1e40af'
+                                            : percentage >= 70
+                                            ? '#92400e'
+                                            : '#991b1b',
+                                      }}
+                                    >
+                                      ✓ Graded
+                                    </span>
+                                  );
+                                })()}
+                                <div style={{ 
+                                  marginTop: '6px', 
+                                  fontSize: 14, 
+                                  fontWeight: 600, 
+                                  color: '#202124'
+                                }}>
+                                  {s.grade}/{s.totalScore || selectedAssignment?.totalPoints || 100}
+                                </div>
+                              </div>
                             ) : (
                               <span
                                 style={{
@@ -524,7 +622,7 @@ const TeacherSubmissions = ({ user }) => {
                                   color: 'var(--text-secondary)',
                                 }}
                               >
-                                Ungraded
+                                Pending
                               </span>
                             )}
                             {s.resubmitted && (
@@ -848,28 +946,90 @@ const TeacherSubmissions = ({ user }) => {
                 <h4 style={{ fontSize: 14, fontWeight: 500, color: '#5f6368', marginBottom: 8 }}>
                   Total Grade {assignmentDetails && assignmentDetails.totalPoints ? `(max: ${assignmentDetails.totalPoints})` : selectedAssignment && selectedAssignment.totalPoints ? `(max: ${selectedAssignment.totalPoints})` : '(0-100)'}
                 </h4>
-                <input
-                  type="number"
-                  min="0"
-                  max={assignmentDetails && assignmentDetails.totalPoints ? assignmentDetails.totalPoints : selectedAssignment && selectedAssignment.totalPoints ? selectedAssignment.totalPoints : 100}
-                  step="0.1"
-                  value={grade}
-                  onChange={(e) => setGrade(e.target.value)}
-                  placeholder="Enter grade"
-                  style={{ 
-                    width: '100%', 
-                    padding: '10px 16px', 
-                    borderRadius: '8px', 
-                    border: '1px solid #dadce0',
-                    fontSize: 14,
-                    color: '#000000'
-                  }}
-                />
-                {assignmentDetails && assignmentDetails.type === 'quiz' && assignmentDetails.totalPoints && (
-                  <div style={{ fontSize: 12, color: '#5f6368', marginTop: 8 }}>
-                    Calculated from individual question scores. You can override it here.
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 2 }}>
+                    <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: '0.5rem', color: '#5f6368' }}>
+                      Student Score
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={assignmentDetails && assignmentDetails.totalPoints ? assignmentDetails.totalPoints : selectedAssignment && selectedAssignment.totalPoints ? selectedAssignment.totalPoints : 100}
+                      step="0.1"
+                      value={grade}
+                      onChange={(e) => {
+                        setGrade(e.target.value);
+                        // Auto-calculate grade percentage
+                        if (totalScore && e.target.value) {
+                          const percentage = ((Number(e.target.value) / Number(totalScore)) * 100).toFixed(2);
+                          setGradePercentage(percentage);
+                        }
+                      }}
+                      placeholder="Enter grade"
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 16px', 
+                        borderRadius: '8px', 
+                        border: '1px solid #dadce0',
+                        fontSize: 14,
+                        color: '#000000'
+                      }}
+                    />
                   </div>
-                )}
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: '0.5rem', color: '#5f6368' }}>
+                      Total Score
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={totalScore}
+                      onChange={(e) => {
+                        setTotalScore(e.target.value);
+                        // Auto-calculate grade percentage
+                        if (grade && e.target.value) {
+                          const percentage = ((Number(grade) / Number(e.target.value)) * 100).toFixed(2);
+                          setGradePercentage(percentage);
+                        }
+                      }}
+                      placeholder={selectedAssignment?.totalPoints || 100}
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 16px', 
+                        borderRadius: '8px', 
+                        border: '1px solid #dadce0',
+                        fontSize: 14,
+                        color: '#000000'
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: '0.5rem', color: '#5f6368' }}>
+                      Grade %
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={gradePercentage}
+                      onChange={(e) => setGradePercentage(e.target.value)}
+                      placeholder="Auto-calculated"
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 16px', 
+                        borderRadius: '8px', 
+                        border: '1px solid #dadce0',
+                        fontSize: 14,
+                        color: '#000000'
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: '#5f6368', marginTop: 8 }}>
+                  Grade percentage is auto-calculated (Student Score ÷ Total Score × 100) but can be manually adjusted.
+                </div>
               </div>
 
               <div style={{ marginBottom: 24 }}>
@@ -899,38 +1059,70 @@ const TeacherSubmissions = ({ user }) => {
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <button
-                onClick={handleDeleteSubmission}
-                disabled={loading}
-                style={{
-                  padding: '10px 16px',
-                  border: '1px solid #f87171',
-                  borderRadius: '4px',
-                  background: '#fee2e2',
-                  color: '#dc2626',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontSize: 14,
-                  fontWeight: 500,
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.target.style.background = '#fecaca';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = '#fee2e2';
-                }}
-                title="Delete this submission permanently"
-              >
-                🗑️ Delete Submission
-              </button>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={handleDeleteSubmission}
+                  disabled={loading}
+                  style={{
+                    padding: '10px 16px',
+                    border: '1px solid #f87171',
+                    borderRadius: '4px',
+                    background: '#fee2e2',
+                    color: '#dc2626',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.target.style.background = '#fecaca';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = '#fee2e2';
+                  }}
+                  title="Delete this submission permanently"
+                >
+                  🗑️ Delete Submission
+                </button>
+                {grade && (
+                  <button
+                    onClick={handleDeleteGrade}
+                    disabled={loading}
+                    style={{
+                      padding: '10px 16px',
+                      border: '1px solid #fbbf24',
+                      borderRadius: '4px',
+                      background: '#fef3c7',
+                      color: '#b45309',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!loading) {
+                        e.target.style.background = '#fde68a';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = '#fef3c7';
+                    }}
+                    title="Delete this grade only (submission will remain)"
+                  >
+                    ✕ Delete Grade
+                  </button>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <button
                   onClick={() => {
                     setSelectedSubmission(null);
                     setAssignmentDetails(null);
                     setGrade('');
+                    setTotalScore('');
+                    setGradePercentage('');
                     setFeedback('');
                     setAnswerGrades({});
                   }}

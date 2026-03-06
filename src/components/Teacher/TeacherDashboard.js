@@ -7,12 +7,12 @@ import LessonsManager from './LessonsManager';
 import LessonView from './LessonView';
 import TeacherCompetencies from './TeacherCompetencies';
 import TeacherSubmissions from './TeacherSubmissions';
-import AdvancedModules from '../Shared/AdvancedModules';
 import Guidelines from './Guidelines';
 import TeacherProfile from './TeacherProfile';
 import ChatBubble from '../Shared/ChatBubble';
 import ChatWindow from '../Shared/ChatWindow';
 import TeacherReports from './TeacherReports';
+import TeacherProgressReport from './TeacherProgressReport';
 import './TeacherDashboard.css';
 
 const TeacherDashboard = ({ user, onLogout }) => {
@@ -495,6 +495,13 @@ const TeacherDashboard = ({ user, onLogout }) => {
               <span>Submissions & Grading</span>
             </Link>
             <Link 
+              to="/teacher/progress" 
+              className={`drawer-nav-item ${location.pathname.includes('/progress') ? 'active' : ''}`}
+            >
+              <span>📊</span>
+              <span>Progress Report</span>
+            </Link>
+            <Link 
               to="/teacher/reports" 
               className={`drawer-nav-item ${location.pathname.includes('/reports') ? 'active' : ''}`}
             >
@@ -529,11 +536,11 @@ const TeacherDashboard = ({ user, onLogout }) => {
         <Routes>
           <Route path="/" element={<DashboardHome />} />
           <Route path="/competencies" element={<TeacherCompetencies />} />
-          <Route path="/advanced" element={<AdvancedModules user={user} />} />
           <Route path="/lessons" element={<LessonsManager />} />
           <Route path="/lessons/:lessonId" element={<LessonView />} />
           <Route path="/submissions" element={<TeacherSubmissions user={user} />} />
           <Route path="/reports" element={<TeacherReports user={user} />} />
+          <Route path="/progress" element={<TeacherProgressReport user={user} />} />
           <Route path="/guidelines" element={<Guidelines />} />
           <Route path="/profile" element={<TeacherProfile user={user} />} />
         </Routes>

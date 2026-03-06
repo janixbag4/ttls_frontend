@@ -5,14 +5,13 @@ import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recha
 import Logo from '../Logo';
 import StudentModules from './StudentModules';
 import StudentLessonView from './StudentLessonView';
-import LessonsViewer from './LessonsViewer';
-import AdvancedModules from '../Shared/AdvancedModules';
 import AssignmentsViewer from './AssignmentsViewer';
 import AssignmentPage from './AssignmentPage';
 import StudentSubmissions from './StudentSubmissions';
 import StudentProfile from './StudentProfile';
 import ReportForm from '../Shared/ReportForm';
 import StudentReports from './StudentReports';
+import StudentProgressReport from './StudentProgressReport';
 import ChatBubble from '../Shared/ChatBubble';
 import ChatWindow from '../Shared/ChatWindow';
 import './StudentDashboard.css';
@@ -92,6 +91,27 @@ const StudentDashboard = ({ user, onLogout }) => {
     } catch (err) { console.error('Failed to fetch progress', err); }
   };
 
+  const syncProgressWithCompletion = async () => {
+    try {
+      // Sync Progress records with LessonView completion status
+      const res = await fetch(`${API_URL}/progress/sync/completion-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        }
+      });
+      const json = await res.json();
+      if (json.success) {
+        console.log(`✓ Synced ${json.syncedCount} lessons to completed status`);
+        // Re-fetch progress after sync to get updated data
+        await fetchProgress();
+      }
+    } catch (err) {
+      console.warn('Progress sync available but not critical:', err);
+    }
+  };
+
   const fetchSubmissions = async () => {
     try {
       const res = await fetch(`${API_URL}/assignments/submissions/student`, {
@@ -113,6 +133,7 @@ const StudentDashboard = ({ user, onLogout }) => {
   useEffect(() => { 
     fetchAssignments(); 
     fetchProgress(); 
+    syncProgressWithCompletion(); // Sync Progress with LessonView completion
     fetchSubmissions();
     fetchDashboardStats();
     fetchUserProfile();
@@ -716,6 +737,13 @@ const StudentDashboard = ({ user, onLogout }) => {
               <span>Profile</span>
             </Link>
             <Link 
+              to="/student/progress"
+              className={`drawer-nav-item ${location.pathname.includes('/progress') ? 'active' : ''}`}
+            >
+              <span>📊</span>
+              <span>Progress Report</span>
+            </Link>
+            <Link 
               to="/student/reports"
               className={`drawer-nav-item report-btn ${location.pathname.includes('/reports') ? 'active' : ''}`}
             >
@@ -738,14 +766,14 @@ const StudentDashboard = ({ user, onLogout }) => {
         <Routes>
           <Route path="/" element={<DashboardHome />} />
           <Route path="/modules" element={<StudentModules user={user} />} />
-          <Route path="/modules/:moduleId" element={<LessonsViewer user={user} />} />
+          <Route path="/modules/:moduleId" element={<StudentModules user={user} />} />
           <Route path="/lessons/:lessonId" element={<StudentLessonView user={user} />} />
-          <Route path="/advanced" element={<AdvancedModules user={user} />} />
           <Route path="/submissions" element={<StudentSubmissions user={user} />} />
           <Route path="/assignments" element={<AssignmentsViewer user={user} />} />
           <Route path="/assignments/:id" element={<AssignmentPage user={user} />} />
           <Route path="/profile" element={<StudentProfile user={user} />} />
           <Route path="/reports" element={<StudentReports user={user} />} />
+          <Route path="/progress" element={<StudentProgressReport user={user} />} />
           
         </Routes>
       </main>

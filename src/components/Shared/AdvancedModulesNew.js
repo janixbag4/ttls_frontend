@@ -83,7 +83,7 @@ const AdvancedModules = ({ user }) => {
     fetchModules();
   }, []);
 
-  // When moduleId is in URL, show that module's lessons
+  // Load module if moduleId is provided in URL
   useEffect(() => {
     if (moduleId && modules.length > 0) {
       const module = modules.find(m => m._id === moduleId);
@@ -109,14 +109,12 @@ const AdvancedModules = ({ user }) => {
     setSearch('');
     setCurrentPage(1);
     if (moduleId) {
-      const basePath = user?.role === 'teacher' ? '/teacher/advanced' : '/student/advanced';
-      navigate(basePath);
+      navigate('/student/advanced');
     }
   };
 
   const handleLessonClick = (lesson) => {
-    const basePath = user?.role === 'teacher' ? '/teacher/lessons' : '/student/lessons';
-    navigate(`${basePath}/${lesson._id}`);
+    navigate(`/student/lessons/${lesson._id}`);
   };
 
   const filteredModules = useMemo(() => {
@@ -345,7 +343,6 @@ const AdvancedModules = ({ user }) => {
         </>
       )}
 
-      {/* LESSONS VIEW - For when a module is selected */}
       {/* LESSONS VIEW - For when a module is selected */}
       {viewMode === 'lessons' && (
         <>

@@ -7,6 +7,15 @@ import '../Teacher/TeacherDashboard.css';
 import '../Shared/LessonView.css';
 import UserAvatar from '../Shared/UserAvatar';
 
+const seededTitles = [
+  'Advanced Canva for Teaching: Assessments & Portfolios',
+  'Instructional Design with UDL and Accessibility in Mind',
+  'Learning Analytics for Teachers: Using Data to Inform Instruction',
+  'Designing Blended & Flipped Classrooms with LMS Integration',
+  'Emerging Tools: AR/VR and Simulations for Deeper Learning',
+  'AI Tools for Teachers: Practical Classroom Applications',
+];
+
 const getYouTubeEmbedUrl = (url) => {
   if (!url) return null;
   try {
@@ -62,7 +71,9 @@ const StudentLessonView = ({ user }) => {
   const { lessonId } = useParams();
   const navigate = useNavigate();
   const [lesson, setLesson] = useState(null);
+  const [moduleId, setModuleId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAdvancedModule, setIsAdvancedModule] = useState(false);
   const [viewingPreviews, setViewingPreviews] = useState({});
   const [outputs, setOutputs] = useState([]);
   const [studentPerformance, setStudentPerformance] = useState(null);
@@ -96,8 +107,44 @@ const StudentLessonView = ({ user }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) {
-        setLesson(res.data.data);
-        fetchPreviews(res.data.data);
+        const lessonData = res.data.data;
+        setLesson(lessonData);
+        
+        // Extract module ID and determine if it's advanced
+        let mId = '';
+        let isAdvanced = false;
+        
+        if (typeof lessonData.module === 'string') {
+          // Module is just an ID
+          mId = lessonData.module;
+          try {
+            const moduleRes = await axios.get(`${apiBase}/api/modules/${mId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (moduleRes.data.success) {
+              // Check if it's an Advanced Module by category
+              isAdvanced = moduleRes.data.data.category === 'advanced-ttl';
+            }
+          } catch (e) {
+            console.warn('Could not fetch module details:', e);
+          }
+        } else if (lessonData.module && typeof lessonData.module === 'object') {
+          // Module is an object
+          mId = lessonData.module._id;
+          // Check if it's an Advanced Module by category
+          isAdvanced = lessonData.module.category === 'advanced-ttl';
+        }
+        
+        // Set the module ID and advanced status for navigation
+        setModuleId(mId);
+        setIsAdvancedModule(isAdvanced);
+        
+        // Fetch completion status
+        fetchCompletionStatus(lessonId);
+        
+        console.log('Lesson loaded:', { lessonId, mId, isAdvanced });
+        
+        fetchPreviews(lessonData);
       }
     } catch (err) {
       console.error('Failed to fetch lesson:', err);
@@ -107,6 +154,27 @@ const StudentLessonView = ({ user }) => {
       setLoading(false);
     }
   };
+
+  const fetchCompletionStatus = async (id) => {
+    try {
+      const res = await axios.get(`${apiBase}/api/lessons/${id}/completion-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.success && res.data.data.completed) {
+        setIsLessonCompleted(true);
+      }
+    } catch (err) {
+      console.log('Could not fetch completion status:', err.message);
+      // It's okay if this endpoint doesn't exist - completion status is optional
+    }
+  };
+
+  // Update completion status whenever isLessonCompleted changes
+  useEffect(() => {
+    if (lessonId && isLessonCompleted) {
+      console.log('Lesson marked as completed:', lessonId);
+    }
+  }, [isLessonCompleted, lessonId]);
 
   const fetchOutputsForLesson = async () => {
     try {
@@ -144,8 +212,8 @@ const StudentLessonView = ({ user }) => {
   const trackLessonView = async () => {
     try {
       await axios.post(
-        `${apiBase}/api/progress/lesson-view`,
-        { lessonId },
+        `${apiBase}/api/progress`,
+        { lessonId, status: 'in-progress' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
     } catch (err) {
@@ -263,12 +331,7 @@ const StudentLessonView = ({ user }) => {
           submissions: submissions
         };
         
-        // Calculate average score
-        const gradedSubmissions = submissions.filter(s => s.isGraded && s.score !== undefined);
-        if (gradedSubmissions.length > 0) {
-          const totalScore = gradedSubmissions.reduce((sum, s) => sum + (s.score || 0), 0);
-          performanceData.averageScore = totalScore / gradedSubmissions.length;
-        }
+        // Note: Average score calculation removed
         
         setStudentPerformance(performanceData);
       }
@@ -311,17 +374,33 @@ const StudentLessonView = ({ user }) => {
     );
   }
 
-  const lessonsPath = lesson?.module?._id
-    ? `/student/modules/${lesson.module._id}`
+  const lessonsPath = moduleId
+    ? `/student/modules/${moduleId}`
     : '/student/modules';
+
+  const handleBackToLessons = () => {
+    navigate(lessonsPath, { 
+      state: { category: isAdvancedModule ? 'advanced-ttl' : 'e-module' } 
+    });
+  };
 
   if (!lesson) {
     return (
       <div className="classroom-main" style={{ padding: '48px', textAlign: 'center' }}>
         <p>Lesson not found</p>
-        <Link to={lessonsPath} style={{ color: '#1a73e8', textDecoration: 'none' }}>
+        <button 
+          onClick={handleBackToLessons}
+          style={{ 
+            background: 'none', 
+            border: 'none', 
+            color: '#1a73e8', 
+            textDecoration: 'none',
+            cursor: 'pointer',
+            fontSize: '1em'
+          }}
+        >
           ← Back to Lessons
-        </Link>
+        </button>
       </div>
     );
   }
@@ -374,18 +453,43 @@ const StudentLessonView = ({ user }) => {
       `}</style>
       {/* Header */}
       <div className="lesson-header">
-        <Link 
-          to={lessonsPath}
+        <button 
+          onClick={handleBackToLessons}
           className="lesson-back-link"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'inherit',
+            padding: 0,
+            font: 'inherit'
+          }}
         >
           <span>←</span>
           <span>Back to Lessons</span>
-        </Link>
+        </button>
         <div className="lesson-title-section">
           <div className="lesson-title-content">
-            <h1 className="lesson-title">
-              {lesson.title}
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.5rem' }}>
+              <h1 className="lesson-title" style={{ margin: 0 }}>
+                {lesson.title}
+              </h1>
+
+              {/*
+              <div style={{
+                padding: '0.25rem 0.75rem',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: '600',
+                backgroundColor: isLessonCompleted ? '#d1fae5' : '#fef3c7',
+                color: isLessonCompleted ? '#065f46' : '#92400e',
+                whiteSpace: 'nowrap'
+              }}>
+                {isLessonCompleted ? '✅ Completed' : '📝 In Progress'}
+              </div>
+
+              */}
+            </div>
             <div className="lesson-meta">
               {lesson.createdBy && <UserAvatar user={lesson.createdBy} size={40} clickable={true} />}
               <div className="lesson-meta-info">
@@ -443,12 +547,6 @@ const StudentLessonView = ({ user }) => {
                     {studentPerformance.completedAssignments} / {studentPerformance.totalAssignments}
                   </div>
                 </div>
-                <div className="metric-card">
-                  <div className="metric-label">Average Score</div>
-                  <div className="metric-value">
-                    {studentPerformance.averageScore ? `${studentPerformance.averageScore.toFixed(1)}%` : 'N/A'}
-                  </div>
-                </div>
               </div>
               {studentPerformance.submissions && studentPerformance.submissions.length > 0 && (
                 <div className="submissions-table-container">
@@ -478,9 +576,9 @@ const StudentLessonView = ({ user }) => {
                             <td>
                               {submission.isGraded && (submission.score !== undefined || submission.grade !== undefined) 
                                 ? submission.score !== undefined 
-                                  ? `${submission.score}%`
+                                  ? `${submission.score}/${submission.totalScore || 100}`
                                   : submission.totalPoints
-                                    ? `${((submission.grade / submission.totalPoints) * 100).toFixed(1)}%`
+                                    ? `${submission.grade}/${submission.totalPoints}`
                                     : `${submission.grade}`
                                 : 'N/A'}
                             </td>

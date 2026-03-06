@@ -10,6 +10,7 @@ const AssignmentsManager = () => {
   const [description, setDescription] = useState('');
   const [type, setType] = useState('assignment');
   const [dueDate, setDueDate] = useState('');
+  const [totalScore, setTotalScore] = useState(100);
   const [files, setFiles] = useState([]);
   const [allowResubmission, setAllowResubmission] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -43,11 +44,12 @@ const AssignmentsManager = () => {
       fd.append('type', type);
       if (dueDate) fd.append('dueDate', dueDate);
       fd.append('allowResubmission', allowResubmission);
+      fd.append('totalPoints', totalScore);
       files.forEach(f => fd.append('attachments', f));
       const res = await fetch(`${apiBase}/api/assignments`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
       const json = await res.json();
       if (json.success) {
-        setTitle(''); setDescription(''); setType('assignment'); setDueDate(''); setFiles([]); setAllowResubmission(false); setIsCreateModalOpen(false);
+        setTitle(''); setDescription(''); setType('assignment'); setDueDate(''); setTotalScore(100); setFiles([]); setAllowResubmission(false); setIsCreateModalOpen(false);
         if (editorRef.current) editorRef.current.innerHTML = '';
         fetchAssignments();
       } else alert(json.message || 'Failed');
@@ -147,6 +149,7 @@ const AssignmentsManager = () => {
                   <option value="essay">Essay</option>
                 </select>
                 <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} />
+                <input type="number" placeholder="Total Score" value={totalScore} onChange={e=>setTotalScore(parseFloat(e.target.value) || 100)} min="1" />
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   <input type="checkbox" id="allowResubmission" checked={allowResubmission} onChange={e=>setAllowResubmission(e.target.checked)} />
                   <label htmlFor="allowResubmission" style={{fontSize:14}}>Allow resubmission</label>

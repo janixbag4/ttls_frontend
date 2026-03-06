@@ -2913,67 +2913,38 @@ const LessonsManager = () => {
                   <h4 style={{ marginBottom: '1rem', fontSize: 18 }}>Student Analytics</h4>
                   
                   {/* Summary Stats */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
                     <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: 8 }}>
-                      <div style={{ fontSize: 24, fontWeight: 600, color: '#111827' }}>{lessonAnalytics.totalStudents}</div>
-                      <div style={{ fontSize: 14, color: '#6b7280' }}>Total Students</div>
+                      <div style={{ fontSize: 24, fontWeight: 600, color: '#111827' }}>{lessonAnalytics.studentsCompleted}</div>
+                      <div style={{ fontSize: 14, color: '#6b7280' }}>Lessons Completed</div>
                     </div>
                     <div style={{ padding: '1rem', background: '#eff6ff', borderRadius: 8 }}>
-                      <div style={{ fontSize: 24, fontWeight: 600, color: '#2563eb' }}>{lessonAnalytics.studentsViewed}</div>
-                      <div style={{ fontSize: 14, color: '#6b7280' }}>Viewed</div>
+                      <div style={{ fontSize: 24, fontWeight: 600, color: '#2563eb' }}>{lessonAnalytics.totalViews}</div>
+                      <div style={{ fontSize: 14, color: '#6b7280' }}>Total Views</div>
                     </div>
                     <div style={{ padding: '1rem', background: '#f0fdf4', borderRadius: 8 }}>
-                      <div style={{ fontSize: 24, fontWeight: 600, color: '#16a34a' }}>{lessonAnalytics.studentsOpened}</div>
-                      <div style={{ fontSize: 14, color: '#6b7280' }}>Opened</div>
-                    </div>
-                    <div style={{ padding: '1rem', background: '#fef3c7', borderRadius: 8 }}>
-                      <div style={{ fontSize: 24, fontWeight: 600, color: '#d97706' }}>{lessonAnalytics.studentsSubmitted}</div>
-                      <div style={{ fontSize: 14, color: '#6b7280' }}>Submitted</div>
+                      <div style={{ fontSize: 24, fontWeight: 600, color: '#16a34a' }}>{lessonAnalytics.totalStudents}</div>
+                      <div style={{ fontSize: 14, color: '#6b7280' }}>Total Students</div>
                     </div>
                   </div>
 
                   {/* Performance Chart */}
                   {lessonAnalytics.studentAnalytics && lessonAnalytics.studentAnalytics.length > 0 && (
                     <div style={{ marginBottom: '1.5rem' }}>
-                      <h5 style={{ marginBottom: '0.75rem', fontSize: 16 }}>Student Performance</h5>
+                      <h5 style={{ marginBottom: '0.75rem', fontSize: 16 }}>Lesson Completion</h5>
                       <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '1rem', background: '#fff', maxHeight: 400, overflowY: 'auto' }}>
                         {lessonAnalytics.studentAnalytics
-                          .filter(s => s.averageScore !== null)
-                          .sort((a, b) => (b.averageScore || 0) - (a.averageScore || 0))
+                          .filter(s => s.hasViewed || s.hasOpened)
                           .map((student, idx) => (
-                            <div key={idx} style={{ marginBottom: '1rem' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                                <span style={{ fontSize: 14, fontWeight: 500 }}>
-                                  {student.student.firstName} {student.student.lastName} ({student.student.idNumber})
-                                </span>
-                                <span style={{ fontSize: 14, fontWeight: 600, color: '#2563eb' }}>
-                                  {student.averageScore?.toFixed(1)}%
-                                </span>
+                            <div key={idx} style={{ marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: idx < lessonAnalytics.studentAnalytics.filter(s => s.hasViewed || s.hasOpened).length - 1 ? '1px solid #e5e7eb' : 'none' }}>
+                              <div style={{ fontSize: 14, fontWeight: 500 }}>
+                                {student.student.firstName} {student.student.lastName} ({student.student.idNumber})
                               </div>
-                              <div style={{ height: 8, background: '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
-                                <div
-                                  style={{
-                                    height: '100%',
-                                    width: `${Math.min(100, student.averageScore || 0)}%`,
-                                    background: student.averageScore >= 90 ? '#10b981' : student.averageScore >= 80 ? '#3b82f6' : student.averageScore >= 70 ? '#f59e0b' : '#ef4444',
-                                    transition: 'width 0.3s',
-                                  }}
-                                />
+                              <div style={{ fontSize: 12, color: '#6b7280', marginTop: '0.25rem' }}>
+                                {student.hasViewed ? `Viewed ${student.viewCount}x` : 'Not viewed'} • {student.hasOpened ? `Opened on ${new Date(student.openedAt).toLocaleDateString()}` : 'Not opened'}
                               </div>
                             </div>
                           ))}
-                        {lessonAnalytics.studentAnalytics.filter(s => s.averageScore === null).length > 0 && (
-                          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
-                            <div style={{ fontSize: 13, color: '#6b7280', marginBottom: '0.5rem' }}>No scores yet:</div>
-                            {lessonAnalytics.studentAnalytics
-                              .filter(s => s.averageScore === null)
-                              .map((student, idx) => (
-                                <div key={idx} style={{ fontSize: 13, color: '#9ca3af', marginBottom: '0.25rem' }}>
-                                  {student.student.firstName} {student.student.lastName} ({student.student.idNumber})
-                                </div>
-                              ))}
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}
@@ -3023,10 +2994,14 @@ const LessonsManager = () => {
                                 )}
                               </td>
                               <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                {student.averageScore !== null ? (
-                                  <span style={{ fontWeight: 600, color: student.averageScore >= 90 ? '#10b981' : student.averageScore >= 80 ? '#3b82f6' : student.averageScore >= 70 ? '#f59e0b' : '#ef4444' }}>
-                                    {student.averageScore.toFixed(1)}%
-                                  </span>
+                                {student.scores && student.scores.length > 0 ? (
+                                  <div>
+                                    {student.scores.map((s, i) => (
+                                      <div key={i} style={{ fontSize: 12, marginBottom: i < student.scores.length - 1 ? '0.25rem' : 0 }}>
+                                        {s.score}/{s.totalPoints}
+                                      </div>
+                                    ))}
+                                  </div>
                                 ) : (
                                   <span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>
                                 )}
