@@ -164,20 +164,19 @@ const StudentProgressReport = ({ user }) => {
   });
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ 
-        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-        borderRadius: '12px',
-        padding: '20px 24px',
-        marginBottom: '24px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-      }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'white' }}>Your Progress Report</h2>
-        <p style={{ fontSize: '13px', margin: '4px 0 0 0', opacity: 0.9, color: 'white' }}>Track your assignments and lesson completion</p>
+    <div className="classroom-main">
+      {/* Dashboard Top Bar */}
+      <div className="dashboard-topbar">
+        <div className="topbar-content">
+          <div className="topbar-left">
+            <h2 className="topbar-title">Progress Report</h2>
+            <p className="topbar-subtitle">Track your assignments and lesson completion</p>
+          </div>
+        </div>
       </div>
 
-      {/* Tab Navigation */}
+      <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Tab Navigation */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', paddingBottom: '16px' }}>
         <button
           onClick={() => setActiveTab('assignments')}
@@ -240,7 +239,14 @@ const StudentProgressReport = ({ user }) => {
               <p>No assignment submissions yet</p>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ 
+              overflowX: 'auto',
+              border: 'none',
+              borderRadius: '12px',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
+              background: 'white',
+              overflow: 'hidden'
+            }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
@@ -433,6 +439,7 @@ const StudentProgressReport = ({ user }) => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

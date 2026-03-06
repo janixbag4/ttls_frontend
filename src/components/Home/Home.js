@@ -24,7 +24,6 @@ const Home = ({ onLogin, initialPanel }) => {
   const [statsLoading, setStatsLoading] = useState(true);
 
   const [loginForm, setLoginForm] = useState({
-    role: 'student',
     idNumber: '',
     password: '',
   });
@@ -404,17 +403,7 @@ const Home = ({ onLogin, initialPanel }) => {
             <form className="panel-form" onSubmit={handleLoginSubmit}>
               <h3>Welcome Back</h3>
               <p className="panel-subtitle">Sign in to access your dashboard</p>
-              <label className="panel-label">Role</label>
-              <select
-                className="panel-input"
-                value={loginForm.role}
-                onChange={(e) => setLoginForm({ ...loginForm, role: e.target.value })}
-              >
-                <option value="student">Student</option>
-                <option value="teacher">Teacher</option>
-                <option value="admin">Administrator</option>
-              </select>
-
+              
               <label className="panel-label">ID Number</label>
               <input
                 className="panel-input"
