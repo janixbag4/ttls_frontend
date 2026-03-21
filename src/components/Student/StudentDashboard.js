@@ -1,5 +1,5 @@
 // src/components/Student/StudentDashboard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import Logo from '../Logo';
@@ -16,10 +16,9 @@ import ChatBubble from '../Shared/ChatBubble';
 import ChatWindow from '../Shared/ChatWindow';
 import './StudentDashboard.css';
 
-const API_URL = process.env.REACT_APP_API_URL + '/api';
-
 const StudentDashboard = ({ user, onLogout }) => {
   const [lessons, setLessons] = useState([]);
+  const [modules, setModules] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [progress, setProgress] = useState([]);
   const [submissions, setSubmissions] = useState([]);
@@ -45,39 +44,49 @@ const StudentDashboard = ({ user, onLogout }) => {
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
+  const token = localStorage.getItem('token');
+  const apiBase = process.env.REACT_APP_API_URL + '/api';
 
   // Remove old report modal logic
 
   const fetchLessons = async () => {
     try {
-      setLoading(true);
-      const res = await fetch(`${API_URL}/lessons`, {
-        headers: getAuthHeaders(),
+      const res = await fetch(`${apiBase}/lessons`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
-      if (json.success) {
-        setLessons(json.data || []);
-      } else {
-        console.error('Failed to fetch lessons:', json.message);
-      }
+      if (json.success) setLessons(json.data || []);
     } catch (err) {
-      console.error('Error fetching lessons:', err);
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch lessons', err);
     }
   };
+
+  const fetchModules = async () => {
+    try {
+      const res = await fetch(`${apiBase}/modules`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) setModules(json.data || []);
+    } catch (err) {
+      console.error('Failed to fetch modules', err);
+    }
+  };
+
   useEffect(() => {
     fetchLessons();
+    fetchModules();
+    fetchAssignments();
+    fetchProgress();
+    syncProgressWithCompletion();
+    fetchSubmissions();
+    fetchDashboardStats();
+    fetchUserProfile();
   }, []);
 
   const fetchAssignments = async () => {
     try {
-      const res = await fetch(`${API_URL}/assignments`, { headers: getAuthHeaders() });
+      const res = await fetch(`${apiBase}/assignments`, { headers: { Authorization: `Bearer ${token}` } });
       const json = await res.json();
       if (json.success) setAssignments(json.data || []);
     } catch (err) { console.error('Error fetching assignments', err); }
@@ -85,7 +94,7 @@ const StudentDashboard = ({ user, onLogout }) => {
 
   const fetchProgress = async () => {
     try {
-      const res = await fetch(`${API_URL}/progress`, { headers: getAuthHeaders() });
+      const res = await fetch(`${apiBase}/progress`, { headers: { Authorization: `Bearer ${token}` } });
       const json = await res.json();
       if (json.success) setProgress(json.data || []);
     } catch (err) { console.error('Failed to fetch progress', err); }
@@ -94,11 +103,11 @@ const StudentDashboard = ({ user, onLogout }) => {
   const syncProgressWithCompletion = async () => {
     try {
       // Sync Progress records with LessonView completion status
-      const res = await fetch(`${API_URL}/progress/sync/completion-status`, {
+      const res = await fetch(`${apiBase}/progress/sync/completion-status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders()
+          Authorization: `Bearer ${token}`
         }
       });
       const json = await res.json();
@@ -114,8 +123,8 @@ const StudentDashboard = ({ user, onLogout }) => {
 
   const fetchSubmissions = async () => {
     try {
-      const res = await fetch(`${API_URL}/assignments/submissions/student`, {
-        headers: getAuthHeaders(),
+      const res = await fetch(`${apiBase}/assignments/submissions/student`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
       if (json.success) {
@@ -125,25 +134,15 @@ const StudentDashboard = ({ user, onLogout }) => {
       }
     } catch (err) {
       console.error('Failed to fetch submissions', err);
-      // If endpoint doesn't exist or fails, set empty array
       setSubmissions([]);
     }
   };
 
-  useEffect(() => { 
-    fetchAssignments(); 
-    fetchProgress(); 
-    syncProgressWithCompletion(); // Sync Progress with LessonView completion
-    fetchSubmissions();
-    fetchDashboardStats();
-    fetchUserProfile();
-  }, []);
-
   const fetchDashboardStats = async () => {
     try {
       setLoadingStats(true);
-      const res = await fetch(`${API_URL}/dashboard/stats/student`, {
-        headers: getAuthHeaders(),
+      const res = await fetch(`${apiBase}/dashboard/stats/student`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
       if (json.success) {
@@ -159,8 +158,8 @@ const StudentDashboard = ({ user, onLogout }) => {
   // Fetch user profile data from database
   const fetchUserProfile = async () => {
     try {
-      const res = await fetch(`${API_URL}/users/profile`, {
-        headers: getAuthHeaders(),
+      const res = await fetch(`${apiBase}/users/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
       if (json.success && json.data) {
@@ -182,9 +181,9 @@ const StudentDashboard = ({ user, onLogout }) => {
         setBio(user.bio || '');
       }
     }
-  };
+  };;
 
-  // Load user profile data from props/localStorage as fallback
+  // Load user profile data
   useEffect(() => {
     if (user) {
       setProfilePicture(user.profilePicture || null);
@@ -192,6 +191,33 @@ const StudentDashboard = ({ user, onLogout }) => {
       setBio(user.bio || '');
     }
   }, [user]);
+
+  // build per-lesson counts: not-started / in-progress / completed
+  const lessonStats = useMemo(() => {
+    const map = {};
+    progress.forEach((p) => {
+      const lessonId =
+        p.lesson?._id || p.lesson?.id || p.lesson || 'unknown';
+      if (!map[lessonId]) {
+        map[lessonId] = {
+          lessonId,
+          title:
+            p.lesson?.title ||
+            lessons.find((l) => l._id === lessonId || l.id === lessonId)?.title ||
+            'Untitled lesson',
+          counts: { 'not-started': 0, 'in-progress': 0, completed: 0 },
+          total: 0,
+        };
+      }
+      const status = p.status || 'not-started';
+      if (!map[lessonId].counts[status]) {
+        map[lessonId].counts[status] = 0;
+      }
+      map[lessonId].counts[status] += 1;
+      map[lessonId].total += 1;
+    });
+    return Object.values(map);
+  }, [progress, lessons]);
 
   const handleProfilePictureUpload = async (e) => {
     const file = e.target.files[0];
@@ -213,16 +239,15 @@ const StudentDashboard = ({ user, onLogout }) => {
       const formData = new FormData();
       formData.append('profilePicture', file);
 
-      const res = await fetch(`${API_URL}/users/profile/picture`, {
+      const res = await fetch(`${apiBase}/users/profile/picture`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       const data = await res.json();
       if (data.success) {
         setProfilePicture(data.profilePicture);
-        // Update user in localStorage
         const updatedUser = { ...user, profilePicture: data.profilePicture };
         localStorage.setItem('user', JSON.stringify(updatedUser));
       } else {
@@ -230,7 +255,6 @@ const StudentDashboard = ({ user, onLogout }) => {
       }
     } catch (err) {
       console.error('Error uploading profile picture:', err);
-      // For now, use local preview
       const reader = new FileReader();
       reader.onload = (e) => setProfilePicture(e.target.result);
       reader.readAsDataURL(file);
@@ -257,16 +281,15 @@ const StudentDashboard = ({ user, onLogout }) => {
       const formData = new FormData();
       formData.append('coverPhoto', file);
 
-      const res = await fetch(`${API_URL}/users/profile/cover`, {
+      const res = await fetch(`${apiBase}/users/profile/cover`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       const data = await res.json();
       if (data.success) {
         setCoverPhoto(data.coverPhoto);
-        // Update user in localStorage
         const updatedUser = { ...user, coverPhoto: data.coverPhoto };
         localStorage.setItem('user', JSON.stringify(updatedUser));
       } else {
@@ -274,7 +297,6 @@ const StudentDashboard = ({ user, onLogout }) => {
       }
     } catch (err) {
       console.error('Error uploading cover photo:', err);
-      // For now, use local preview
       const reader = new FileReader();
       reader.onload = (e) => setCoverPhoto(e.target.result);
       reader.readAsDataURL(file);
@@ -283,11 +305,11 @@ const StudentDashboard = ({ user, onLogout }) => {
 
   const handleSaveBio = async () => {
     try {
-      const res = await fetch(`${API_URL}/users/profile/bio`, {
+      const res = await fetch(`${apiBase}/users/profile/bio`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeaders(),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ bio }),
       });
@@ -295,7 +317,6 @@ const StudentDashboard = ({ user, onLogout }) => {
       const data = await res.json();
       if (data.success) {
         setIsEditingBio(false);
-        // Update user in localStorage
         const updatedUser = { ...user, bio: bio };
         localStorage.setItem('user', JSON.stringify(updatedUser));
       } else {
@@ -304,7 +325,6 @@ const StudentDashboard = ({ user, onLogout }) => {
     } catch (err) {
       console.error('Error saving bio:', err);
       setIsEditingBio(false);
-      // For now, just update locally
       const updatedUser = { ...user, bio: bio };
       localStorage.setItem('user', JSON.stringify(updatedUser));
     }
@@ -569,14 +589,23 @@ const StudentDashboard = ({ user, onLogout }) => {
     <div className="dashboard">
       {/* Hamburger Menu Button - Only visible on smaller screens */}
       <button 
-        className="sidebar-toggle-btn"
+        className={`sidebar-toggle-btn ${sidebarOpen ? 'active' : ''}`}
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label="Toggle sidebar"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <line x1="3" y1="12" x2="21" y2="12"/>
-          <line x1="3" y1="18" x2="21" y2="18"/>
+        <svg 
+          width="24" 
+          height="24" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2"
+          style={{
+            transform: sidebarOpen ? 'rotate(0deg)' : 'rotate(180deg)',
+            transition: 'transform 0.3s ease'
+          }}
+        >
+          <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </button>
 

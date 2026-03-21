@@ -280,6 +280,11 @@ const TeacherDashboard = ({ user, onLogout }) => {
               <h2 className="topbar-title">Dashboard</h2>
               <p className="topbar-subtitle">Manage your lessons and student progress</p>
             </div>
+            <div className="topbar-right">
+              <Link to="/teacher/lessons" className="btn-create" style={{ textDecoration: 'none', background: 'var(--active-color)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <span>+ Create</span>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -350,14 +355,23 @@ const TeacherDashboard = ({ user, onLogout }) => {
     <div className="dashboard">
       {/* Hamburger Menu Button - Only visible on smaller screens */}
       <button 
-        className="sidebar-toggle-btn"
+        className={`sidebar-toggle-btn ${sidebarOpen ? 'active' : ''}`}
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label="Toggle sidebar"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <line x1="3" y1="12" x2="21" y2="12"/>
-          <line x1="3" y1="18" x2="21" y2="18"/>
+        <svg 
+          width="24" 
+          height="24" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2"
+          style={{
+            transform: sidebarOpen ? 'rotate(0deg)' : 'rotate(180deg)',
+            transition: 'transform 0.3s ease'
+          }}
+        >
+          <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </button>
 

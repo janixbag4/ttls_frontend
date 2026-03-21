@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import DOMPurify from 'dompurify';
 import QuizBuilder from './QuizBuilder';
@@ -59,6 +59,7 @@ const PAGE_SIZE = 10;
 
 const LessonsManager = () => {
   const navigate = useNavigate();
+  const { moduleId } = useParams();
   const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [selectedModule, setSelectedModule] = useState(null); // Selected module to view lessons
@@ -158,6 +159,12 @@ const LessonsManager = () => {
   const [sortBy, setSortBy] = useState('latest'); // latest | oldest | az | za
   const [dateFilter, setDateFilter] = useState('all'); // all | today | week | month
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Simple global search (Facebook-style)
+  const [simpleSearch, setSimpleSearch] = useState('');
+  const [simpleSearchResults, setSimpleSearchResults] = useState(null); // null = not searched yet, [] = no results
+  const [allLessons, setAllLessons] = useState([]);
+  const [allModules, setAllModules] = useState([]);
 
   const token = localStorage.getItem('token');
 
@@ -172,10 +179,107 @@ const LessonsManager = () => {
     }
   };
 
-  const fetchLessons = async (moduleId = null) => {
+  // Fetch all lessons and modules for simple search
+  const fetchAllLessons = async () => {
+    try {
+      if (!token) return;
+      // Fetch e-modules lessons
+      const eRes = await axios.get(`${apiBase}/lessons?category=e-module`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const eLessons = eRes.data.data || [];
+      
+      // Fetch advanced lessons
+      const advRes = await axios.get(`${apiBase}/lessons?category=advanced-ttl`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const advLessons = advRes.data.data || [];
+      
+      // Combine all
+      setAllLessons([...eLessons, ...advLessons]);
+    } catch (err) {
+      console.error('Failed to fetch all lessons:', err);
+    }
+  };
+
+  const fetchAllModules = async () => {
+    try {
+      if (!token) return;
+      // Fetch e-modules
+      const eRes = await axios.get(`${apiBase}/modules?category=e-module`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const eModules = eRes.data.data || [];
+      
+      // Fetch advanced modules
+      const advRes = await axios.get(`${apiBase}/modules?category=advanced-ttl`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const advModules = advRes.data.data || [];
+      
+      // Combine all
+      setAllModules([...eModules, ...advModules]);
+    } catch (err) {
+      console.error('Failed to fetch all modules:', err);
+    }
+  };
+
+  // Handle simple search on Enter key (Facebook-style)
+  const handleSimpleSearch = async (e) => {
+    if (e.key === 'Enter') {
+      const query = simpleSearch.trim().toLowerCase();
+      if (!query) {
+        setSimpleSearchResults([]);
+        return;
+      }
+
+      // Search lessons
+      const matchedLessons = allLessons.filter(l =>
+        l.title?.toLowerCase().includes(query) ||
+        l.description?.toLowerCase().includes(query)
+      );
+
+      // Search modules
+      const matchedModules = allModules.filter(m =>
+        m.title?.toLowerCase().includes(query) ||
+        m.description?.toLowerCase().includes(query) ||
+        m.moduleNumber?.toString().includes(query)
+      );
+
+      // Fetch lessons for each matched module
+      const modulesWithLessons = await Promise.all(
+        matchedModules.map(async (module) => {
+          try {
+            const res = await axios.get(`${apiBase}/lessons`, {
+              params: { module: module._id },
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            return {
+              ...module,
+              lessons: res.data.data || []
+            };
+          } catch (err) {
+            console.error(`Failed to fetch lessons for module ${module._id}:`, err);
+            return {
+              ...module,
+              lessons: []
+            };
+          }
+        })
+      );
+
+      setSimpleSearchResults({
+        lessons: matchedLessons,
+        modules: modulesWithLessons
+      });
+    }
+  };
+
+  const fetchLessons = async (moduleId = null, category = null) => {
     try {
       const params = moduleId ? { module: moduleId } : {};
-      if (selectedCategory) params.category = selectedCategory;
+      const categoryToUse = category || selectedCategory;
+      if (categoryToUse) params.category = categoryToUse;
       const res = await axios.get(`${apiBase}/lessons`, {
         params,
         headers: { Authorization: `Bearer ${token}` },
@@ -194,12 +298,58 @@ const LessonsManager = () => {
   useEffect(() => {
     fetchModules();
     if (selectedModule) {
-      fetchLessons(selectedModule._id);
+      // Clear old lessons immediately before fetching new ones
+      setLessons([]);
+      fetchLessons(selectedModule._id, selectedCategory);
     } else {
-      fetchLessons();
+      setLessons([]);
+      fetchLessons(null, selectedCategory);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, selectedModule]);
+
+  // Fetch all lessons and modules on mount for simple search
+  useEffect(() => {
+    if (token) {
+      fetchAllLessons();
+      fetchAllModules();
+    }
+  }, [token]);
+
+  // Handle moduleId from URL (when navigating from search results)
+  useEffect(() => {
+    if (moduleId) {
+      // First check if module is already in the modules array
+      const module = modules.find(m => m._id === moduleId);
+      if (module) {
+        setSelectedModule(module);
+        setViewMode('lessons');
+        setSimpleSearchResults(null); // Clear search results
+        fetchLessons(moduleId, selectedCategory);
+      } else {
+        // If not found in array, fetch it directly
+        const fetchModuleDirectly = async () => {
+          try {
+            const res = await axios.get(`${apiBase}/modules/${moduleId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.data.success && res.data.data.module) {
+              const fetchedModule = res.data.data.module;
+              setSelectedModule(fetchedModule);
+              setViewMode('lessons');
+              setSimpleSearchResults(null); // Clear search results
+              setLessons(res.data.data.lessons || []);
+            }
+          } catch (err) {
+            console.error('Failed to fetch module:', err);
+          }
+        };
+        if (token) {
+          fetchModuleDirectly();
+        }
+      }
+    }
+  }, [moduleId, modules.length]);
 
   const fetchOutputsForLesson = async (lessonId) => {
     try {
@@ -401,7 +551,17 @@ const LessonsManager = () => {
   const handleModuleClick = (module) => {
     setSelectedModule(module);
     setViewMode('lessons');
-    fetchLessons(module._id);
+    // Switch to the module's category
+    if (module.category) {
+      setSelectedCategory(module.category);
+    }
+    // If module has pre-fetched lessons from search, use them directly
+    if (module.lessons && Array.isArray(module.lessons)) {
+      setLessons(module.lessons);
+    } else {
+      // Otherwise fetch lessons normally
+      fetchLessons(module._id, module.category);
+    }
   };
 
   const handleFileChange = (e) => {
@@ -571,9 +731,8 @@ const LessonsManager = () => {
   const filteredLessons = useMemo(() => {
     const now = new Date();
     let list = [...lessons];
-
-    // Filter by category
-    list = list.filter((l) => (l.category || 'e-module') === selectedCategory);
+    // Lessons are already fetched only for the selected module,
+    // so no need to filter by module - category already handled by server
 
     if (search.trim()) {
       const term = search.toLowerCase();
@@ -625,6 +784,8 @@ const LessonsManager = () => {
 
     return list;
   }, [lessons, search, sortBy, dateFilter, selectedCategory]);
+
+
 
   // ---------- PAGINATION ----------
   const totalPages = Math.max(1, Math.ceil(filteredLessons.length / PAGE_SIZE));
@@ -722,8 +883,203 @@ const LessonsManager = () => {
         </div>
       </div>
 
-      {/* CATEGORY TABS - Only show when in modules view */}
-      {viewMode === 'modules' && (
+      {/* Simple Global Search Bar (Facebook Style) */}
+      <div style={{ 
+        padding: '0.75rem 1.5rem',
+        backgroundColor: '#f9fafb', 
+        borderBottom: '1px solid #e5e7eb',
+        marginBottom: '1rem'
+      }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder={window.innerWidth < 480 ? "🔍 Search..." : "🔍 Search lessons and modules..."}
+            value={simpleSearch}
+            onChange={(e) => setSimpleSearch(e.target.value)}
+            onKeyDown={handleSimpleSearch}
+            style={{
+              flex: 1,
+              minWidth: '100px',
+              padding: window.innerWidth < 480 ? '0.75rem 1rem' : '0.875rem 1.25rem',
+              fontSize: window.innerWidth < 480 ? '13px' : '14px',
+              fontWeight: '500',
+              borderRadius: '28px',
+              border: '2px solid #e5e7eb',
+              outline: 'none',
+              transition: 'all 0.3s ease',
+              backgroundColor: '#ffffff',
+              color: '#374151',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+              whiteSpace: 'normal',
+              wordWrap: 'break-word'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#667eea';
+              e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1), 0 2px 8px rgba(0, 0, 0, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e5e7eb';
+              e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+            }}
+          />
+          {simpleSearchResults && (
+            <button
+              onClick={() => {
+                setSimpleSearchResults(null);
+                setSimpleSearch('');
+              }}
+              style={{
+                padding: '0.875rem 1.5rem',
+                backgroundColor: '#f3f4f6',
+                color: '#374151',
+                border: '2px solid #e5e7eb',
+                borderRadius: '28px',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#e5e7eb';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#e5e7eb';
+              }}
+            >
+              ← Back
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Simple Search Results (Facebook Style) */}
+      {simpleSearchResults && (simpleSearchResults.lessons?.length > 0 || simpleSearchResults.modules?.length > 0) && (
+        <div style={{
+          marginBottom: '1.5rem',
+          padding: '1.5rem',
+          backgroundColor: '#f9fafb',
+          borderRadius: '8px',
+          border: '1px solid #e5e7eb'
+        }}>
+          <h4 style={{ margin: '0 0 1.5rem 0', color: '#374151', fontSize: '16px', fontWeight: 700 }}>
+            Search Results ({(simpleSearchResults.modules?.length || 0) + (simpleSearchResults.lessons?.length || 0)})
+          </h4>
+
+          {/* Modules Section */}
+          {simpleSearchResults.modules?.length > 0 && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h5 style={{ margin: '0 0 1rem 0', color: '#667eea', fontSize: '14px', fontWeight: 600 }}>
+                📦 Modules ({simpleSearchResults.modules.length})
+              </h5>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                {simpleSearchResults.modules.map((module) => (
+                  <div
+                    key={module._id}
+                    onClick={() => {
+                      handleModuleClick(module);
+                      setSimpleSearchResults(null); // Clear search results
+                      setSimpleSearch(''); // Clear search input
+                    }}
+                    style={{
+                      padding: '1rem',
+                      backgroundColor: '#fff',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '0.5rem' }}>
+                      Module {module.moduleNumber}
+                    </div>
+                    <h6 style={{ margin: '0 0 0.5rem 0', color: '#374151', fontSize: '15px', fontWeight: 600 }}>
+                      {module.title}
+                    </h6>
+                    <p style={{ margin: 0, color: '#6b7280', fontSize: '13px' }}>
+                      {module.description ? module.description.substring(0, 60) + '...' : 'No description'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Lessons Section */}
+          {simpleSearchResults.lessons?.length > 0 && (
+            <div>
+              <h5 style={{ margin: '0 0 1rem 0', color: '#667eea', fontSize: '14px', fontWeight: 600 }}>
+                📚 Lessons ({simpleSearchResults.lessons.length})
+              </h5>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                {simpleSearchResults.lessons.map((lesson) => (
+                  <div
+                    key={lesson._id}
+                    onClick={() => {
+                      navigate(`/teacher/lessons/${lesson._id}`);
+                    }}
+                    style={{
+                      padding: '1rem',
+                      backgroundColor: '#fff',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '0.5rem' }}>
+                      {lesson.module?.title || 'Module'}
+                    </div>
+                    <h6 style={{ margin: '0 0 0.5rem 0', color: '#374151', fontSize: '15px', fontWeight: 600 }}>
+                      {lesson.title}
+                    </h6>
+                    <p style={{ margin: 0, color: '#6b7280', fontSize: '13px' }}>
+                      {lesson.description ? lesson.description.replace(/<[^>]+>/g, '').substring(0, 60) + '...' : 'No description'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {simpleSearchResults && simpleSearchResults.lessons?.length === 0 && simpleSearchResults.modules?.length === 0 && (
+        <div style={{
+          marginBottom: '1.5rem',
+          padding: '2rem',
+          backgroundColor: '#f9fafb',
+          borderRadius: '8px',
+          border: '1px solid #e5e7eb',
+          textAlign: 'center',
+          color: '#9ca3af'
+        }}>
+          <p>No lessons or modules found matching "{simpleSearch}"</p>
+        </div>
+      )}
+
+      {/* CATEGORY TABS - Only show when in modules view AND no search results showing */}
+      {viewMode === 'modules' && !simpleSearchResults && (
         <section style={{ marginBottom: '1.5rem' }}>
           <div style={{ 
             display: 'flex', 
@@ -774,7 +1130,7 @@ const LessonsManager = () => {
       )}
 
       {/* MODULES VIEW */}
-      {viewMode === 'modules' && (
+      {viewMode === 'modules' && !simpleSearchResults && (
         <section className="classroom-main" style={{ padding: 0 }}>
           {modules.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px', color: '#5f6368' }}>
@@ -858,8 +1214,8 @@ const LessonsManager = () => {
         </section>
       )}
 
-      {/* LESSONS VIEW - Only show when a module is selected */}
-      {viewMode === 'lessons' && selectedModule && (
+      {/* LESSONS VIEW - Only show when a module is selected AND no search results showing */}
+      {viewMode === 'lessons' && selectedModule && !simpleSearchResults && (
         <>
           {/* FILTER BAR - Google Classroom Style */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -920,6 +1276,31 @@ const LessonsManager = () => {
             {filteredLessons.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px', color: '#5f6368' }}>
                 <p>No lessons found in this module. Create your first lesson to get started.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetForm();
+                    setIsEditing(false);
+                    setEditingLessonId(null);
+                    setIsModalOpen(true);
+                  }}
+                  style={{
+                    marginTop: '16px',
+                    padding: '10px 24px',
+                    backgroundColor: '#667eea',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#5568d3'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#667eea'}
+                >
+                  + Create Lesson
+                </button>
               </div>
             ) : (
               <>
