@@ -703,7 +703,14 @@ const LessonsManager = () => {
       await axios.delete(`${apiBase}/lessons/${lessonId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      await fetchLessons();
+      // Only refetch lessons for the current module if one is selected
+      if (selectedModule) {
+        await fetchLessons(selectedModule._id, selectedCategory);
+      } else if (moduleId) {
+        await fetchLessons(moduleId, selectedCategory);
+      } else {
+        await fetchLessons(null, selectedCategory);
+      }
       toast.success('Lesson deleted successfully');
     } catch (err) {
       console.error('Delete lesson error:', err);
