@@ -257,6 +257,7 @@ const LessonsViewer = ({ user }) => {
           </div>
 
           {/* Search and Filters */}
+            {/* 
           <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
               <input
@@ -310,6 +311,7 @@ const LessonsViewer = ({ user }) => {
             </select>
           </div>
 
+*/}
           {/* Lessons Grid */}
           {filteredLessons.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px', color: '#5f6368' }}>

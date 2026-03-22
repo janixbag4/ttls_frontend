@@ -33,6 +33,41 @@ const AssignmentsManager = () => {
 
   const handleFileChange = (e) => setFiles(Array.from(e.target.files || []));
 
+  const handleDownloadAttachment = async (assignmentId, attachmentIdx, filename) => {
+    try {
+      console.log('Teacher download attempt:', { assignmentId, attachmentIdx, filename, token: !!token });
+      const url = `${apiBase}/api/assignments/${assignmentId}/attachments/${attachmentIdx}/download`;
+      console.log('Fetch URL:', url);
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        redirect: 'follow'
+      });
+
+      console.log('Response status:', res.status, res.ok);
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Error response:', text);
+        alert('Failed to download file: ' + res.statusText);
+        return;
+      }
+
+      const blob = await res.blob();
+      console.log('Blob received:', blob.type, blob.size);
+      const urlObj = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = urlObj;
+      a.download = filename || 'file';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(urlObj);
+      console.log('Download triggered for:', filename);
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('Failed to download file: ' + err.message);
+    }
+  };
+
   const handleCreate = async (e) => {
     e && e.preventDefault && e.preventDefault();
     try {
@@ -202,8 +237,19 @@ const AssignmentsManager = () => {
                 <div className="form-group">
                   <label>Attachments</label>
                   <ul>
-                    {viewingAssignment.attachments.map(f=> (
-                      <li key={f.public_id || f.filename}><a href={f.url||f.path} target="_blank" rel="noreferrer">{f.filename || f.url}</a></li>
+                    {viewingAssignment.attachments.map((f, idx)=> (
+                      <li key={f.public_id || f.filename}>
+                        <a 
+                          href="#" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDownloadAttachment(viewingAssignment._id, idx, f.filename || 'file');
+                          }}
+                          style={{color:'#2563eb',textDecoration:'underline',cursor:'pointer'}}
+                        >
+                          {f.filename || f.url}
+                        </a>
+                      </li>
                     ))}
                   </ul>
                 </div>

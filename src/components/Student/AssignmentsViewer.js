@@ -328,8 +328,8 @@ const AssignmentsViewer = ({ user }) => {
                   <h3 style={{ fontSize: 18, fontWeight: 400, color: '#202124', marginBottom: 16, fontFamily: "'Google Sans', 'Roboto', sans-serif" }}>Grade & Feedback</h3>
                   <div style={{ padding: '16px', background: '#f9fafb', borderRadius: 8, border: '1px solid #e0e0e0' }}>
                     <div style={{ marginBottom: 12 }}>
-                      <strong style={{ color: getGradeColor(modalSubmission.grade, modalSubmission.totalPoints || 100) }}>
-                        Grade: {modalSubmission.grade !== null && modalSubmission.grade !== undefined ? modalSubmission.grade : '—'} / {modalSubmission.totalPoints || 100}
+                      <strong style={{ color: getGradeColor(modalSubmission.grade, modalSubmission.assignment?.totalPoints || modalSubmission.totalScore || modalSubmission.totalPoints || 100) }}>
+                        Grade: {modalSubmission.grade !== null && modalSubmission.grade !== undefined ? modalSubmission.grade : '—'} / {modalSubmission.assignment?.totalPoints || modalSubmission.totalScore || modalSubmission.totalPoints || 100}
                       </strong>
                     </div>
                     {modalSubmission.feedback && (

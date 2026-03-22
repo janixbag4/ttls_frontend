@@ -206,7 +206,8 @@ const StudentModules = ({ user }) => {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (res.data.success && res.data.data) {
-              const fetchedModule = res.data.data;
+              // Backend returns { module, lessons }, so extract the module object
+              const fetchedModule = res.data.data.module || res.data.data;
               setLessons([]); // Clear old lessons first
               setSelectedModule(fetchedModule);
               setViewMode('lessons');

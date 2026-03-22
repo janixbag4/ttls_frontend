@@ -301,12 +301,17 @@ const LessonsManager = () => {
       // Clear old lessons immediately before fetching new ones
       setLessons([]);
       fetchLessons(selectedModule._id, selectedCategory);
+    } else if (moduleId) {
+      // If viewing a specific module from URL, only fetch lessons from that module
+      setLessons([]);
+      fetchLessons(moduleId, selectedCategory);
     } else {
+      // Only fetch all lessons if not in a specific module view
       setLessons([]);
       fetchLessons(null, selectedCategory);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, selectedModule]);
+  }, [selectedCategory, selectedModule, moduleId]);
 
   // Fetch all lessons and modules on mount for simple search
   useEffect(() => {
@@ -333,12 +338,19 @@ const LessonsManager = () => {
             const res = await axios.get(`${apiBase}/modules/${moduleId}`, {
               headers: { Authorization: `Bearer ${token}` },
             });
-            if (res.data.success && res.data.data.module) {
-              const fetchedModule = res.data.data.module;
-              setSelectedModule(fetchedModule);
-              setViewMode('lessons');
-              setSimpleSearchResults(null); // Clear search results
-              setLessons(res.data.data.lessons || []);
+            if (res.data.success) {
+              // Backend returns { module, lessons } structure
+              const fetchedModule = res.data.data?.module || res.data.data;
+              const lessonsList = res.data.data?.lessons || [];
+              
+              if (fetchedModule && fetchedModule._id) {
+                setSelectedModule(fetchedModule);
+                setViewMode('lessons');
+                setSimpleSearchResults(null); // Clear search results
+                setLessons(lessonsList);
+              } else {
+                console.error('Module data is invalid:', res.data.data);
+              }
             }
           } catch (err) {
             console.error('Failed to fetch module:', err);
@@ -842,7 +854,7 @@ const LessonsManager = () => {
             <p className="topbar-subtitle">
               {selectedModule 
                 ? `Manage lessons in ${selectedModule.title}` 
-                : 'Create modules to organize your lessons. Each module can contain multiple lessons.'}
+                : 'Create Modules and Lessons'}
             </p>
           </div>
           <div className="topbar-actions">
@@ -890,6 +902,7 @@ const LessonsManager = () => {
         borderBottom: '1px solid #e5e7eb',
         marginBottom: '1rem'
       }}>
+      
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <input
             type="text"
@@ -1217,7 +1230,7 @@ const LessonsManager = () => {
       {/* LESSONS VIEW - Only show when a module is selected AND no search results showing */}
       {viewMode === 'lessons' && selectedModule && !simpleSearchResults && (
         <>
-          {/* FILTER BAR - Google Classroom Style */}
+          {/* FILTER BAR - Google Classroom Style 
           <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
               <input
@@ -1270,7 +1283,7 @@ const LessonsManager = () => {
               <option value="month">Last 30 days</option>
             </select>
           </div>
-
+*/}
           {/* LESSON CARDS - Google Classroom Style */}
           <section className="classroom-main" style={{ padding: 0 }}>
             {filteredLessons.length === 0 ? (

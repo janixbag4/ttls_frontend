@@ -193,6 +193,34 @@ const AssignmentPage = ({ user }) => {
     setUploadFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleDownloadAttachment = async (assignmentId, attachmentIdx, filename) => {
+    try {
+      const url = `${apiBase}/api/assignments/${assignmentId}/attachments/${attachmentIdx}/download`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        redirect: 'follow'
+      });
+
+      if (!res.ok) {
+        alert('Failed to download file');
+        return;
+      }
+
+      const blob = await res.blob();
+      const urlObj = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = urlObj;
+      a.download = filename || 'file';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(urlObj);
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('Failed to download file');
+    }
+  };
+
   const updateQuizAnswer = (questionId, field, value) => {
     setQuizAnswers(prev => prev.map(a => 
       a.questionId === questionId ? { ...a, [field]: value } : a
@@ -324,7 +352,15 @@ const AssignmentPage = ({ user }) => {
             {assignment.attachments.map((att, idx) => (
               <div key={idx} className="attachment-item">
                 <div className="attachment-icon">📄</div>
-                <a href={att.url} target="_blank" rel="noopener noreferrer" className="attachment-link">
+                <a 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDownloadAttachment(assignment._id, idx, att.filename || 'file');
+                  }}
+                  className="attachment-link"
+                  style={{cursor:'pointer'}}
+                >
                   {att.filename || att.url}
                 </a>
               </div>
@@ -350,7 +386,7 @@ const AssignmentPage = ({ user }) => {
           </div>
           {submission.grade !== undefined && submission.grade !== null && (
             <div className="submission-grade-badge">
-              Grade: {submission.grade} / {submission.totalPoints || 100}
+              Grade: {submission.grade} / {submission.assignment?.totalPoints || submission.totalScore || submission.totalPoints || 100}
               {submission.autoGraded && <span style={{ fontSize: 12, marginLeft: '0.5rem', opacity: 0.8 }}>(Auto-graded)</span>}
             </div>
           )}

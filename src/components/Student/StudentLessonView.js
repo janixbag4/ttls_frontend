@@ -282,13 +282,46 @@ const StudentLessonView = ({ user }) => {
 
   const handleDownloadFile = async (fileId, filename) => {
     try {
+      // Validate fileId exists
+      if (!fileId) {
+        console.error('No file ID provided for download');
+        alert('File ID is missing. Please refresh and try again.');
+        return;
+      }
+
+      // Double-check that file exists in current lesson state
+      const fileExists = lesson.files && lesson.files.some(f => {
+        const fId = f._id ? f._id.toString() : f.id;
+        return fId === fileId.toString();
+      });
+
+      if (!fileExists) {
+        console.error('File not found in lesson:', { fileId, lessonFiles: lesson.files });
+        alert('File not found. Please refresh the page and try again.');
+        return;
+      }
+
       // Simple approach: fetch with redirect, browser handles the download
       const url = `${apiBase}/api/lessons/${lesson._id}/files/${fileId}/download`;
+      console.log('Downloading file:', { url, fileId, filename });
+
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
         redirect: 'follow' // Follow redirects automatically
       });
       
+      if (res.status === 404) {
+        console.error('File not found on server:', { 
+          status: res.status, 
+          url,
+          fileId 
+        });
+        alert('File not found on server. It may have been deleted. Please refresh the page.');
+        // Refresh lesson to get fresh state
+        await fetchLesson();
+        return;
+      }
+
       if (res.redirected) {
         // If redirected, open the final URL directly
         window.open(res.url, '_blank');
@@ -304,11 +337,11 @@ const StudentLessonView = ({ user }) => {
         document.body.removeChild(a);
         URL.revokeObjectURL(urlObj);
       } else {
-        throw new Error('Download failed');
+        throw new Error(`Download failed with status ${res.status}`);
       }
     } catch (err) {
       console.error('Download error:', err);
-      alert('Failed to download file');
+      alert('Failed to download file. Please try again.');
     }
   };
 
@@ -576,10 +609,8 @@ const StudentLessonView = ({ user }) => {
                             <td>
                               {submission.isGraded && (submission.score !== undefined || submission.grade !== undefined) 
                                 ? submission.score !== undefined 
-                                  ? `${submission.score}/${submission.totalScore || 100}`
-                                  : submission.totalPoints
-                                    ? `${submission.grade}/${submission.totalPoints}`
-                                    : `${submission.grade}`
+                                  ? `${submission.score}/${assignment?.totalPoints || submission.totalScore || 100}`
+                                  : `${submission.grade}/${assignment?.totalPoints || submission.totalScore || submission.totalPoints || 100}`
                                 : 'N/A'}
                             </td>
                             <td>

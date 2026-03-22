@@ -69,6 +69,7 @@ const LessonView = () => {
   const { lessonId } = useParams();
   const navigate = useNavigate();
   const [lesson, setLesson] = useState(null);
+  const [moduleId, setModuleId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [viewingPreviews, setViewingPreviews] = useState({});
   const [lessonAnalytics, setLessonAnalytics] = useState(null);
@@ -104,6 +105,9 @@ const LessonView = () => {
   const [editPreviews, setEditPreviews] = useState([]);
   const [editLoading, setEditLoading] = useState(false);
   const [editUploadProgress, setEditUploadProgress] = useState(0);
+  const [editCoverPhoto, setEditCoverPhoto] = useState('');
+  const [editCoverPhotoFile, setEditCoverPhotoFile] = useState(null);
+  const [editCoverPhotoPreview, setEditCoverPhotoPreview] = useState('');
   const editEditorRef = useRef(null);
   const [editIsBold, setEditIsBold] = useState(false);
   const [editIsItalic, setEditIsItalic] = useState(false);
@@ -122,7 +126,40 @@ const LessonView = () => {
 
   const token = localStorage.getItem('token');
 
-  
+  const handleDownloadAttachment = async (assignmentId, attachmentIdx, filename) => {
+    try {
+      console.log('Teacher lesson download attempt:', { assignmentId, attachmentIdx, filename, token: !!token });
+      const url = `${apiBase}/api/assignments/${assignmentId}/attachments/${attachmentIdx}/download`;
+      console.log('Fetch URL:', url);
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        redirect: 'follow'
+      });
+
+      console.log('Response status:', res.status, res.ok);
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Error response:', text);
+        alert('Failed to download file: ' + res.statusText);
+        return;
+      }
+
+      const blob = await res.blob();
+      console.log('Blob received:', blob.type, blob.size);
+      const urlObj = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = urlObj;
+      a.download = filename || 'file';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(urlObj);
+      console.log('Download triggered for:', filename);
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('Failed to download file: ' + err.message);
+    }
+  };
 
   const fetchModules = async () => {
     try {
@@ -153,6 +190,12 @@ const LessonView = () => {
       });
       if (res.data.success) {
         setLesson(res.data.data);
+        // Extract module ID if available
+        if (res.data.data.module && res.data.data.module._id) {
+          setModuleId(res.data.data.module._id);
+        } else if (res.data.data.folder) {
+          setModuleId(res.data.data.folder);
+        }
         fetchPreviews(res.data.data);
       }
     } catch (err) {
@@ -247,6 +290,22 @@ const LessonView = () => {
     }
   };
 
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+    try {
+      await axios.delete(`${apiBase}/api/comments/${commentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Remove the comment from state
+      setComments(comments.filter(c => c._id !== commentId));
+    } catch (err) {
+      console.error('Failed to delete comment:', err);
+      alert(err.response?.data?.message || 'Failed to delete comment');
+    }
+  };
+
   const fetchPreviews = async (lessonData) => {
     if (!lessonData || !lessonData.files) return;
     const objs = {};
@@ -294,13 +353,46 @@ const LessonView = () => {
 
   const handleDownloadFile = async (fileId, filename) => {
     try {
+      // Validate fileId exists
+      if (!fileId) {
+        console.error('No file ID provided for download');
+        alert('File ID is missing. Please refresh and try again.');
+        return;
+      }
+
+      // Double-check that file exists in current lesson state
+      const fileExists = lesson.files && lesson.files.some(f => {
+        const fId = f._id ? f._id.toString() : f.id;
+        return fId === fileId.toString();
+      });
+
+      if (!fileExists) {
+        console.error('File not found in lesson:', { fileId, lessonFiles: lesson.files });
+        alert('File not found. Please refresh the page and try again.');
+        return;
+      }
+
       // Simple approach: fetch with redirect, browser handles the download
       const url = `${apiBase}/api/lessons/${lesson._id}/files/${fileId}/download`;
+      console.log('Downloading file:', { url, fileId, filename });
+
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
         redirect: 'follow' // Follow redirects automatically
       });
       
+      if (res.status === 404) {
+        console.error('File not found on server:', { 
+          status: res.status, 
+          url,
+          fileId 
+        });
+        alert('File not found on server. It may have been deleted. Please refresh the page.');
+        // Refresh lesson to get fresh state
+        await fetchLesson();
+        return;
+      }
+
       if (res.redirected) {
         // If redirected, open the final URL directly
         window.open(res.url, '_blank');
@@ -316,11 +408,11 @@ const LessonView = () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(urlObj);
       } else {
-        throw new Error('Download failed');
+        throw new Error(`Download failed with status ${res.status}`);
       }
     } catch (err) {
       console.error('Download error:', err);
-      alert('Failed to download file');
+      alert('Failed to download file. Please try again.');
     }
   };
 
@@ -444,6 +536,9 @@ const LessonView = () => {
       } else {
         formData.append('module', '');
       }
+      if (editCoverPhotoFile) {
+        formData.append('coverPhoto', editCoverPhotoFile);
+      }
       editNewFiles.forEach((file) => {
         formData.append('files', file);
       });
@@ -455,9 +550,21 @@ const LessonView = () => {
         },
       };
 
-      await axios.put(`${apiBase}/api/lessons/${lessonId}`, formData, config);
+      console.log('Submitting lesson edit with files:', {
+        fileCount: editNewFiles.length,
+        files: editNewFiles.map(f => ({ name: f.name, size: f.size }))
+      });
+
+      const updateResponse = await axios.put(`${apiBase}/api/lessons/${lessonId}`, formData, config);
+      
+      // Make sure we wait for the lesson to be fully fetched before closing modal
+      console.log('Lesson update response received, fetching refreshed data...');
+      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay to ensure server state is consistent
       await fetchLesson();
+      
+      // Only close modal after lesson has been successfully re-fetched
       setIsEditModalOpen(false);
+      console.log('Lesson updated successfully, modal closed');
       alert('Lesson updated successfully');
     } catch (err) {
       console.error('Update lesson error:', err);
@@ -493,6 +600,32 @@ const LessonView = () => {
     e.target.value = '';
   };
 
+  const handleEditCoverPhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file for the cover photo');
+      return;
+    }
+    
+    setEditCoverPhotoFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setEditCoverPhotoPreview(previewUrl);
+    e.target.value = '';
+  };
+
+  const handleRemoveEditCoverPhoto = () => {
+    if (editCoverPhotoPreview) {
+      try {
+        URL.revokeObjectURL(editCoverPhotoPreview);
+      } catch (e) {}
+    }
+    setEditCoverPhotoFile(null);
+    setEditCoverPhotoPreview('');
+  };
+
   const handleRemoveEditFile = (index) => {
     const previewToRemove = editPreviews[index];
     if (previewToRemove?.url) {
@@ -516,7 +649,10 @@ const LessonView = () => {
     return (
       <div className="classroom-main" style={{ padding: '48px', textAlign: 'center' }}>
         <p>Lesson not found</p>
-        <Link to="/teacher/lessons" style={{ color: '#1a73e8', textDecoration: 'none' }}>
+        <Link 
+          to={moduleId ? `/teacher/modules/${moduleId}` : '/teacher/lessons'} 
+          style={{ color: '#1a73e8', textDecoration: 'none' }}
+        >
           ← Back to Lessons
         </Link>
       </div>
@@ -524,13 +660,14 @@ const LessonView = () => {
   }
 
   const youtubeEmbedUrl = getYouTubeEmbedUrl(lesson.youtubeLink);
+  const lessonsPath = moduleId ? `/teacher/modules/${moduleId}` : '/teacher/lessons';
 
   return (
     <div className="classroom-main" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <Link 
-          to="/teacher/lessons" 
+          to={lessonsPath} 
           style={{ 
             display: 'inline-flex', 
             alignItems: 'center', 
@@ -596,6 +733,15 @@ const LessonView = () => {
                 setEditIframeTitle(lesson.iframeTitle || '');
                 setEditLinks(lesson.links || []);
                 setEditFiles(lesson.files || []);
+                // Set existing cover photo
+                setEditCoverPhoto(lesson.coverPhoto || '');
+                setEditCoverPhotoFile(null);
+                if (editCoverPhotoPreview) {
+                  try {
+                    URL.revokeObjectURL(editCoverPhotoPreview);
+                  } catch (e) {}
+                }
+                setEditCoverPhotoPreview('');
                 // Clean up old previews
                 editPreviews.forEach(p => {
                   if (p?.url) {
@@ -1179,6 +1325,7 @@ const LessonView = () => {
                 replyText={replyText}
                 setReplyText={setReplyText}
                 handlePostReply={handlePostReply}
+                handleDeleteComment={handleDeleteComment}
               />
             ))}
           </div>
@@ -2529,6 +2676,116 @@ const LessonView = () => {
                     letterSpacing: '0.3px',
                     textTransform: 'uppercase'
                   }}>
+                    Lesson Cover Photo (optional)
+                  </label>
+                  {editCoverPhoto && !editCoverPhotoPreview && (
+                    <div style={{
+                      marginBottom: '16px',
+                      position: 'relative',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      border: '1.5px solid #e5e7eb'
+                    }}>
+                      <img 
+                        src={editCoverPhoto} 
+                        alt="Cover photo" 
+                        style={{ width: '100%', height: 200, objectFit: 'cover' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setEditCoverPhoto('')}
+                        style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          background: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: 600
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                  {editCoverPhotoPreview && (
+                    <div style={{
+                      marginBottom: '16px',
+                      position: 'relative',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      border: '1.5px solid #6366f1'
+                    }}>
+                      <img 
+                        src={editCoverPhotoPreview} 
+                        alt="New cover photo" 
+                        style={{ width: '100%', height: 200, objectFit: 'cover' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveEditCoverPhoto}
+                        style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          background: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: 600
+                        }}
+                      >
+                        Remove
+                      </button>
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        left: '8px',
+                        background: '#10b981',
+                        color: '#fff',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 600
+                      }}>
+                        New Image
+                      </div>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEditCoverPhotoChange}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      fontSize: '15px',
+                      borderRadius: '12px',
+                      border: '1.5px solid #e5e7eb',
+                      outline: 'none',
+                      background: '#ffffff',
+                      cursor: 'pointer'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '32px' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: '#374151',
+                    marginBottom: '10px',
+                    letterSpacing: '0.3px',
+                    textTransform: 'uppercase'
+                  }}>
                     Embedded Website (optional)
                   </label>
                   <input
@@ -3120,9 +3377,11 @@ const LessonView = () => {
                     {viewingOutput.attachments.map((file, idx) => (
                       <a
                         key={idx}
-                        href={file.url || file.path}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDownloadAttachment(viewingOutput._id, idx, file.filename || 'file');
+                        }}
                         style={{
                           padding: '12px 16px',
                           background: '#fff',
@@ -3134,7 +3393,8 @@ const LessonView = () => {
                           display: 'flex',
                           alignItems: 'center',
                           gap: '8px',
-                          transition: 'all 0.2s'
+                          transition: 'all 0.2s',
+                          cursor: 'pointer'
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = '#f0f4ff';
@@ -3264,6 +3524,7 @@ const TeacherCommentItem = ({
   replyText,
   setReplyText,
   handlePostReply,
+  handleDeleteComment,
 }) => {
   return (
     <div
@@ -3328,6 +3589,23 @@ const TeacherCommentItem = ({
           >
             Reply
           </button>
+          {handleDeleteComment && (
+            <button
+              onClick={() => handleDeleteComment(comment._id)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#dc2626',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 500,
+                padding: 0,
+              }}
+              title="Delete this comment"
+            >
+              🗑️ Delete
+            </button>
+          )}
         </div>
         {replyingTo === comment._id && (
           <div style={{ marginTop: 8 }}>
@@ -3415,6 +3693,7 @@ const TeacherCommentItem = ({
                 replyText={replyText}
                 setReplyText={setReplyText}
                 handlePostReply={handlePostReply}
+                handleDeleteComment={handleDeleteComment}
               />
             ))}
           </div>
