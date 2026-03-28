@@ -6,6 +6,7 @@ const apiBase = process.env.REACT_APP_API_URL + '/api';
 const TeacherProgressReport = ({ user }) => {
   const [students, setStudents] = useState([]);
   const [lessons, setLessons] = useState([]);
+  const [modules, setModules] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -17,6 +18,17 @@ const TeacherProgressReport = ({ user }) => {
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
   const [manualGradeOverrides, setManualGradeOverrides] = useState({}); // { studentId: overrideGrade }
   const [saveStatus, setSaveStatus] = useState(null); // 'saving', 'saved', 'error'
+  const [selectedModuleFilter, setSelectedModuleFilter] = useState('all');
+  const [selectedLessonFilter, setSelectedLessonFilter] = useState('all');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('all'); // 'all', 'completed', 'in-progress', 'not-started'
+  const [selectedScoreRange, setSelectedScoreRange] = useState('all'); // 'all', '90-100', '80-89', '70-79', 'below-70'
+  const [selectedPerformanceLevel, setSelectedPerformanceLevel] = useState('all'); // 'all', 'above-avg', 'below-avg'
+  const [dateRangeStart, setDateRangeStart] = useState('');
+  const [dateRangeEnd, setDateRangeEnd] = useState('');
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [assignmentSortOrder, setAssignmentSortOrder] = useState('asc'); // 'asc' for A-Z, 'desc' for Z-A
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -42,6 +54,14 @@ const TeacherProgressReport = ({ user }) => {
       const lessonsJson = await lessonsRes.json();
       const allLessons = lessonsJson.success ? (lessonsJson.data || []) : [];
       setLessons(allLessons);
+
+      // Fetch all modules
+      const modulesRes = await fetch(`${apiBase}/modules`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const modulesJson = await modulesRes.json();
+      const allModules = modulesJson.success ? (modulesJson.data || []) : [];
+      setModules(allModules);
 
       // Fetch all assignments
       const assignmentsRes = await fetch(`${apiBase}/assignments`, {
@@ -501,6 +521,158 @@ const TeacherProgressReport = ({ user }) => {
     );
   }
 
+  // Get modules filtered by category
+  const getModulesByCategory = () => {
+    if (selectedCategoryFilter === 'all') {
+      return modules;
+    }
+    return modules.filter(m => m.category === selectedCategoryFilter);
+  };
+
+  // Filter data based on selected module, lesson, and status
+  const getFilteredLessonCompletionData = () => {
+    // If no filters selected, return all data
+    const hasFilters = selectedCategoryFilter !== 'all' || selectedModuleFilter !== 'all' || 
+                       selectedLessonFilter !== 'all' || !!searchTerm.trim() || 
+                       selectedStatusFilter !== 'all' || selectedPerformanceLevel !== 'all' ||
+                       !!dateRangeStart || !!dateRangeEnd;
+
+    if (!hasFilters) {
+      return lessonCompletionData;
+    }
+
+    return lessonCompletionData.filter(item => {
+      // Search by lesson name
+      if (searchTerm.trim()) {
+        const titleMatch = item.lesson?.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!titleMatch) return false;
+      }
+
+      // Get the lesson to check its module
+      const lesson = lessons.find(l => l.title === item.lesson);
+      if (!lesson) return true; // Include if we can't find the lesson
+
+      const lessonModuleId = lesson.module?._id || lesson.module;
+
+      // Filter by module
+      if (selectedModuleFilter !== 'all') {
+        if (lessonModuleId !== selectedModuleFilter) {
+          return false;
+        }
+      }
+
+      // Filter by category (through module)
+      if (selectedCategoryFilter !== 'all') {
+        const module = modules.find(m => m._id === lessonModuleId);
+        if (!module || module.category !== selectedCategoryFilter) {
+          return false;
+        }
+      }
+
+      // Filter by lesson
+      if (selectedLessonFilter !== 'all') {
+        if (lesson._id !== selectedLessonFilter) {
+          return false;
+        }
+      }
+
+      // Filter by completion status if specified
+      if (selectedStatusFilter !== 'all' && item.students) {
+        const hasMatchingStatus = item.students.some(s => s.status === selectedStatusFilter);
+        if (!hasMatchingStatus) return false;
+      }
+
+      // Filter by performance level
+      if (selectedPerformanceLevel !== 'all' && item.students) {
+        const completionRate = item.students.filter(s => s.status === 'completed').length / item.students.length;
+        if (selectedPerformanceLevel === 'above-avg' && completionRate <= 0.5) return false;
+        if (selectedPerformanceLevel === 'below-avg' && completionRate > 0.5) return false;
+      }
+
+      return true;
+    });
+  };
+
+  const getFilteredAssignmentScoresData = () => {
+    // If no filters selected, return all data sorted
+    let filtered = assignmentScoresData;
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(item => {
+        const titleMatch = item.assignment?.toLowerCase().includes(searchTerm.toLowerCase());
+        return titleMatch;
+      });
+    }
+
+    // Apply score range filter (only for assignments tab)
+    if (selectedScoreRange !== 'all') {
+      filtered = filtered.filter(item => {
+        if (!item.studentScores) return true;
+        
+        const scores = item.studentScores
+          .filter(s => s.score !== null && s.score !== undefined)
+          .map(s => (s.score / s.totalPoints) * 100);
+        
+        const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+        
+        if (selectedScoreRange === '90-100') return avgScore >= 90 && avgScore <= 100;
+        if (selectedScoreRange === '80-89') return avgScore >= 80 && avgScore < 90;
+        if (selectedScoreRange === '70-79') return avgScore >= 70 && avgScore < 80;
+        if (selectedScoreRange === 'below-70') return avgScore < 70;
+        
+        return true;
+      });
+    }
+
+    // Apply performance level filter
+    if (selectedPerformanceLevel !== 'all') {
+      filtered = filtered.filter(item => {
+        if (!item.studentScores) return true;
+        
+        const scores = item.studentScores
+          .filter(s => s.score !== null && s.score !== undefined)
+          .map(s => (s.score / s.totalPoints) * 100);
+        
+        const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+        
+        if (selectedPerformanceLevel === 'above-avg') return avgScore > 75;
+        if (selectedPerformanceLevel === 'below-avg') return avgScore <= 75;
+        
+        return true;
+      });
+    }
+
+    // Sort assignments by name
+    filtered = filtered.sort((a, b) => {
+      if (assignmentSortOrder === 'asc') {
+        return a.assignment.localeCompare(b.assignment);
+      } else {
+        return b.assignment.localeCompare(a.assignment);
+      }
+    });
+
+    return filtered;
+  };
+
+  // Get lessons for the selected module
+  const getLessonsForModule = () => {
+    if (selectedModuleFilter === 'all') {
+      // Return only lessons that have a module
+      return lessons.filter(l => l.module && (l.module._id || l.module));
+    }
+    
+    const filtered = lessons.filter(lesson => {
+      // Only include lessons that have a module
+      if (!lesson.module) return false;
+      
+      const lessonModuleId = lesson.module?._id || lesson.module;
+      return lessonModuleId === selectedModuleFilter;
+    });
+    
+    return filtered;
+  };
+
   return (
     <div className="classroom-main">
       <div className="dashboard-topbar">
@@ -511,6 +683,301 @@ const TeacherProgressReport = ({ user }) => {
           </div>
         </div>
       </div>
+
+      {/* Filter Section */}
+      <div style={{
+        display: 'flex',
+        gap: '16px',
+        padding: '16px 20px',
+        backgroundColor: 'var(--bg-secondary)',
+        borderBottom: '1px solid var(--border-color)',
+        flexWrap: 'wrap',
+        alignItems: 'center'
+      }}>
+        {/* Search by Name */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '0 1 250px' }}>
+          <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Search Name:</label>
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              fontWeight: '500',
+              width: '100%'
+            }}
+          />
+        </div>
+
+        {/* Filter by Category */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '0 1 200px' }}>
+          <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Type:</label>
+          <select
+            value={selectedCategoryFilter}
+            onChange={(e) => {
+              setSelectedCategoryFilter(e.target.value);
+              setSelectedModuleFilter('all');
+              setSelectedLessonFilter('all');
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              width: '100%'
+            }}
+          >
+            <option value="all">All Types</option>
+            <option value="e-module">E-Module</option>
+            <option value="advanced-ttl">Advanced TTL</option>
+          </select>
+        </div>
+
+        {/* Filter by Module */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '0 1 250px' }}>
+          <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Module:</label>
+          <select
+            value={selectedModuleFilter}
+            onChange={(e) => {
+              setSelectedModuleFilter(e.target.value);
+              setSelectedLessonFilter('all');
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              width: '100%'
+            }}
+          >
+            <option value="all">All Modules</option>
+            {getModulesByCategory().map(m => (
+              <option key={m._id} value={m._id}>Module {m.moduleNumber}: {m.title}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Filter by Lesson */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '0 1 250px' }}>
+          <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Lesson:</label>
+          <select
+            value={selectedLessonFilter}
+            onChange={(e) => setSelectedLessonFilter(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              width: '100%'
+            }}
+            disabled={selectedModuleFilter === 'all'}
+          >
+            <option value="all">All Lessons</option>
+            {getLessonsForModule().map(l => (
+              <option key={l._id} value={l._id}>{l.title}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Advanced Filters Toggle Button */}
+        <button
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
+          style={{
+            padding: '8px 12px',
+            borderRadius: '6px',
+            border: '1px solid var(--border-color)',
+            background: filtersExpanded ? '#dbeafe' : 'var(--bg-secondary)',
+            color: filtersExpanded ? '#0369a1' : 'var(--text-primary)',
+            fontSize: '13px',
+            cursor: 'pointer',
+            fontWeight: '500',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <span style={{ transform: filtersExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+          Advanced Filters
+        </button>
+
+        {(searchTerm.trim() !== '' || selectedModuleFilter !== 'all' || selectedLessonFilter !== 'all' || selectedCategoryFilter !== 'all' || selectedStatusFilter !== 'all' || selectedScoreRange !== 'all' || selectedPerformanceLevel !== 'all') && (
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedCategoryFilter('all');
+              setSelectedModuleFilter('all');
+              setSelectedLessonFilter('all');
+              setSelectedStatusFilter('all');
+              setSelectedScoreRange('all');
+              setSelectedPerformanceLevel('all');
+              setDateRangeStart('');
+              setDateRangeEnd('');
+            }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--hover-bg)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--active-bg)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--hover-bg)'}
+          >
+            Clear All Filters
+          </button>
+        )}
+      </div>
+
+      {/* Advanced Filters Section */}
+      {filtersExpanded && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '16px',
+          padding: '16px 20px',
+          backgroundColor: '#f9fafb',
+          borderBottom: '1px solid var(--border-color)',
+          fontSize: '13px'
+        }}>
+          {/* Lesson Tab Filters */}
+          {activeTab === 'lessons' && (
+            <>
+              {/* Filter by Status */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '12px' }}>Completion Status:</label>
+                <select
+                  value={selectedStatusFilter}
+                  onChange={(e) => setSelectedStatusFilter(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="completed">✅ Completed</option>
+                  <option value="in-progress">📝 In Progress</option>
+                  <option value="not-started">⭕ Not Started</option>
+                </select>
+              </div>
+
+              {/* Filter by Performance Level */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '12px' }}>Performance Level:</label>
+                <select
+                  value={selectedPerformanceLevel}
+                  onChange={(e) => setSelectedPerformanceLevel(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  <option value="all">All Levels</option>
+                  <option value="above-avg">📈 Above Average</option>
+                  <option value="below-avg">📉 Below Average</option>
+                </select>
+              </div>
+
+              {/* Info text for Lesson tab */}
+              <div style={{ gridColumn: '1 / -1', fontSize: '12px', color: '#6b7280', fontStyle: 'italic' }}>
+                💡 Tip: Filter lessons by completion status and performance level to focus on specific student progress
+              </div>
+            </>
+          )}
+
+          {/* Assignment Tab Filters */}
+          {activeTab === 'assignments' && (
+            <>
+              {/* Filter by Score Range */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '12px' }}>Score Range:</label>
+                <select
+                  value={selectedScoreRange}
+                  onChange={(e) => setSelectedScoreRange(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  <option value="all">All Scores</option>
+                  <option value="90-100">90-100 (Excellent)</option>
+                  <option value="80-89">80-89 (Good)</option>
+                  <option value="70-79">70-79 (Average)</option>
+                  <option value="below-70">Below 70 (Needs Help)</option>
+                </select>
+              </div>
+
+              {/* Filter by Performance Level */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '12px' }}>Performance Level:</label>
+                <select
+                  value={selectedPerformanceLevel}
+                  onChange={(e) => setSelectedPerformanceLevel(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  <option value="all">All Levels</option>
+                  <option value="above-avg">📈 Above Average (&gt;75%)</option>
+                  <option value="below-avg">📉 Below Average (≤75%)</option>
+                </select>
+              </div>
+
+              {/* Info text for Assignment tab */}
+              <div style={{ gridColumn: '1 / -1', fontSize: '12px', color: '#6b7280', fontStyle: 'italic' }}>
+                💡 Tip: Filter assignments by score range or performance to identify high/low performing assessments
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <div style={{ padding: '16px 20px', display: 'flex', gap: '16px', borderBottom: '1px solid #e5e7eb', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -610,142 +1077,136 @@ const TeacherProgressReport = ({ user }) => {
           <div>
             <h2 style={{ fontSize: '18px', marginBottom: '16px', fontWeight: 600 }}>Lesson Completion Status</h2>
             
-            {/* Overall Summary with Per-Lesson Breakdown */}
-            {lessonCompletionData.length > 0 && (
-              <div style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '24px',
-                color: 'white',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-              }}>
-                <h3 style={{ margin: '0 0 16px 0', fontSize: 16, fontWeight: 500 }}>Overall Progress Summary</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 600, marginBottom: 4 }}>
-                      {lessons.length}
-                    </div>
-                    <div style={{ fontSize: 12, opacity: 0.9 }}>Total Lessons</div>
-                  </div>
-                  
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 600, marginBottom: 4 }}>
-                      {students.length}
-                    </div>
-                    <div style={{ fontSize: 12, opacity: 0.9 }}>Total Students</div>
-                  </div>
-                  
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 600, marginBottom: 4 }}>
-                      {students.length > 0 && lessonCompletionData.length > 0 ? 
-                        Math.round(lessonCompletionData.reduce((sum, l) => sum + l.totalCompleted, 0) / (students.length * lessons.length) * 100) 
-                        : 0}%
-                    </div>
-                    <div style={{ fontSize: 12, opacity: 0.9 }}>Avg Completion</div>
-                  </div>
-                </div>
-                
-                {/* Per-Lesson Breakdown Chart */}
-                <h3 style={{ margin: '0 0 16px 0', fontSize: 14, fontWeight: 500 }}>Completion by Lesson</h3>
-                <div style={{ display: 'grid', gap: '16px' }}>
-                  {lessonCompletionData.map((lesson, idx) => {
-                    const completed = lesson.students.filter(s => s.status === 'completed').length;
-                    const inProgress = lesson.students.filter(s => s.status === 'in-progress').length;
-                    const notStarted = lesson.students.filter(s => s.status !== 'completed' && s.status !== 'in-progress').length;
-                    const total = lesson.students.length;
-                    const completedPct = total > 0 ? Math.round((completed / total) * 100) : 0;
-                    const inProgressPct = total > 0 ? Math.round((inProgress / total) * 100) : 0;
-                    const notStartedPct = total > 0 ? Math.round((notStarted / total) * 100) : 0;
-                    
-                    return (
-                      <div key={idx}>
-                        <div style={{ fontSize: '12px', fontWeight: 500, marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                          <span>{lesson.lesson}</span>
-                          <span>{completedPct}% complete</span>
-                        </div>
-                        <div style={{ display: 'flex', height: '24px', borderRadius: '4px', overflow: 'hidden', gap: '2px', background: 'rgba(255,255,255,0.1)' }}>
-                          {completed > 0 && (
-                            <div style={{ flex: completedPct, background: '#10b981', transition: 'flex 0.3s' }}></div>
-                          )}
-                          {inProgress > 0 && (
-                            <div style={{ flex: inProgressPct, background: '#f59e0b', transition: 'flex 0.3s' }}></div>
-                          )}
-                          {notStarted > 0 && (
-                            <div style={{ flex: notStartedPct, background: '#ef4444', transition: 'flex 0.3s' }}></div>
-                          )}
-                        </div>
-                        <div style={{ fontSize: '11px', marginTop: '6px', opacity: 0.8, display: 'flex', gap: '16px' }}>
-                          <span>✅ {completed}/{total}</span>
-                          <span>📝 {inProgress}/{total}</span>
-                          <span>⭕ {notStarted}/{total}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+            {getFilteredLessonCompletionData().length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+                No data available for selected filters
               </div>
-            )}
-            {lessonCompletionData.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>No lessons available</div>
             ) : (
-              <div style={{ display: 'grid', gap: '24px' }}>
-                {/* Completed Section */}
-                {lessonCompletionData.some(l => l.totalCompleted > 0) && (
-                  <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#16a34a', marginBottom: '12px', textTransform: 'uppercase' }}>✅ Completed</h3>
-                    <div style={{ border: '1px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden' }}>
-                      {lessonCompletionData.map((lesson, lidx) => {
-                        const completed = lesson.students.filter(s => s.status === 'completed');
-                        if (completed.length === 0) return null;
-                        return (
-                          <div key={lidx} style={{ padding: '16px', borderBottom: lidx < lessonCompletionData.length - 1 ? '1px solid #e5e7eb' : 'none', background: lidx % 2 === 0 ? '#fff' : '#f9fafb' }}>
-                            <div style={{ marginBottom: '12px' }}>
-                              <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{lesson.lesson}</div>
-                              <div style={{ fontSize: '12px', color: '#6b7280' }}>{completed.length} students completed</div>
-                            </div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                              {completed.map((student, s) => (
-                                <div key={s} style={{ fontSize: '13px', padding: '6px 12px', background: '#d1fae5', color: '#065f46', borderRadius: '4px', border: '1px solid #86efac' }}>{student.firstName} {student.lastName}</div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
+              <div>
+                {/* Summary Cards */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  borderRadius: '12px',
+                  padding: '24px',
+                  marginBottom: '24px',
+                  color: 'white',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  <h3 style={{ margin: '0 0 16px 0', fontSize: 14, fontWeight: 500 }}>Summary</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>{getFilteredLessonCompletionData().length}</div>
+                      <div style={{ fontSize: 12, opacity: 0.9 }}>Lessons</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>{students.length}</div>
+                      <div style={{ fontSize: 12, opacity: 0.9 }}>Students</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>
+                        {students.length > 0 && getFilteredLessonCompletionData().length > 0 ? 
+                          Math.round(getFilteredLessonCompletionData().reduce((sum, l) => sum + l.totalCompleted, 0) / (students.length * getFilteredLessonCompletionData().length) * 100)
+                          : 0}%
+                      </div>
+                      <div style={{ fontSize: 12, opacity: 0.9 }}>Avg Completion</div>
                     </div>
                   </div>
-                )}
+                </div>
 
-                {/* Not Started / In Progress Section */}
-                {lessonCompletionData.some(l => l.totalPending > 0) && (
-                  <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#6b7280', marginBottom: '12px', textTransform: 'uppercase' }}>⭕ Not Started / In Progress</h3>
-                    <div style={{ border: '1px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden' }}>
-                      {lessonCompletionData.map((lesson, lidx) => {
-                        const notCompleted = lesson.students.filter(s => s.status !== 'completed');
-                        if (notCompleted.length === 0) return null;
+                {/* Compact Table View */}
+                <div style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  marginBottom: '24px'
+                }}>
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '13px'
+                  }}>
+                    <thead>
+                      <tr style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600 }}>Lesson</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Completed</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>In Progress</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Not Started</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Completion %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getFilteredLessonCompletionData().map((lesson, idx) => {
+                        const completed = lesson.students.filter(s => s.status === 'completed').length;
+                        const inProgress = lesson.students.filter(s => s.status === 'in-progress').length;
+                        const notStarted = lesson.students.filter(s => s.status !== 'completed' && s.status !== 'in-progress').length;
+                        const total = lesson.students.length;
+                        const completedPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
                         return (
-                          <div key={lidx} style={{ padding: '16px', borderBottom: lidx < lessonCompletionData.length - 1 ? '1px solid #e5e7eb' : 'none', background: lidx % 2 === 0 ? '#fff' : '#f9fafb' }}>
-                            <div style={{ marginBottom: '12px' }}>
-                              <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{lesson.lesson}</div>
-                              <div style={{ fontSize: '12px', color: '#6b7280' }}>{notCompleted.length} students pending</div>
-                            </div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                              {notCompleted.map((student, s) => {
-                                const isInProgress = student.status === 'in-progress';
-                                return (
-                                  <div key={s} style={{ fontSize: '13px', padding: '6px 12px', background: isInProgress ? '#fffbeb' : '#f3f4f6', color: isInProgress ? '#92400e' : '#6b7280', borderRadius: '4px', border: `1px solid ${isInProgress ? '#fef08a' : '#d1d5db'}` }}>
-                                    {isInProgress && '📝 '}{student.firstName} {student.lastName}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
+                          <tr key={idx} style={{
+                            borderBottom: idx < getFilteredLessonCompletionData().length - 1 ? '1px solid #e5e7eb' : 'none',
+                            background: idx % 2 === 0 ? '#fff' : '#f9fafb',
+                            '&:hover': { background: '#f3f4f6' }
+                          }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 500 }}>{lesson.lesson}</td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                              <span style={{ background: '#d1fae5', color: '#065f46', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                                {completed}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                              <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                                {inProgress}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                              <span style={{ background: '#fee2e2', color: '#7f1d1d', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                                {notStarted}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                              <div style={{ fontSize: 14, fontWeight: 600, color: completedPct >= 75 ? '#16a34a' : completedPct >= 50 ? '#f59e0b' : '#dc2626' }}>
+                                {completedPct}%
+                              </div>
+                            </td>
+                          </tr>
                         );
                       })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Detailed Student View */}
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Detailed Student Status</h3>
+                  {getFilteredLessonCompletionData().map((lesson, lessonIdx) => (
+                    <div key={lessonIdx} style={{ marginBottom: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+                      <div style={{ background: '#f3f4f6', padding: '12px 16px', fontWeight: 600, borderBottom: '1px solid #e5e7eb' }}>
+                        {lesson.lesson}
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', padding: '16px' }}>
+                        {lesson.students.map((student, sIdx) => {
+                          const statusColor = student.status === 'completed' ? '#10b981' : student.status === 'in-progress' ? '#f59e0b' : '#6b7280';
+                          const statusLabel = student.status === 'completed' ? '✅ Completed' : student.status === 'in-progress' ? '📝 In Progress' : '⭕ Not Started';
+                          
+                          return (
+                            <div key={sIdx} style={{ background: '#f9fafb', border: `1px solid ${statusColor}20`, borderRadius: '6px', padding: '12px' }}>
+                              <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '4px' }}>
+                                {student.firstName} {student.lastName}
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
+                                ID: {student.idNumber}
+                              </div>
+                              <div style={{ background: statusColor + '20', color: statusColor, padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600, textAlign: 'center' }}>
+                                {statusLabel}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -754,55 +1215,177 @@ const TeacherProgressReport = ({ user }) => {
         {/* Assignment Scores Tab */}
         {activeTab === 'assignments' && (
           <div>
-            <h2 style={{ fontSize: '18px', marginBottom: '16px', fontWeight: 600 }}>Assignment Scores</h2>
-            {assignmentScoresData.length === 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>Assignment Scores</h2>
+              <button
+                onClick={() => setAssignmentSortOrder(assignmentSortOrder === 'asc' ? 'desc' : 'asc')}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Sort assignments by name"
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--hover-bg)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+              >
+                {assignmentSortOrder === 'asc' ? '↑ A→Z' : '↓ Z→A'}
+              </button>
+            </div>
+            {getFilteredAssignmentScoresData().length === 0 ? (
               <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
-                No graded assignments yet
+                No graded assignments for selected filters
               </div>
             ) : (
-              <div style={{ display: 'grid', gap: '16px' }}>
-                {assignmentScoresData.map((assignment, idx) => (
-                  <div key={idx} style={{ 
-                    border: '1px solid var(--border-color)', 
-                    borderRadius: '8px', 
-                    padding: '16px',
-                    background: 'var(--bg-secondary)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                  }}>
-                    <h3 style={{ fontSize: '16px', marginBottom: '12px', fontWeight: 600 }}>
-                      {assignment.assignment}
-                      <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>({assignment.type})</span>
-                    </h3>
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                          <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                            <th style={{ padding: '8px', textAlign: 'left', fontSize: '13px', fontWeight: 600 }}>Student</th>
-                            <th style={{ padding: '8px', textAlign: 'left', fontSize: '13px', fontWeight: 600 }}>ID</th>
-                            <th style={{ padding: '8px', textAlign: 'right', fontSize: '13px', fontWeight: 600 }}>Score</th>
-                            <th style={{ padding: '8px', textAlign: 'left', fontSize: '13px', fontWeight: 600 }}>Submitted</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {assignment.studentScores.map((student, sidx) => (
-                            <tr key={sidx} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                              <td style={{ padding: '8px', fontSize: '13px' }}>{student.firstName} {student.lastName}</td>
-                              <td style={{ padding: '8px', fontSize: '13px', color: '#6b7280' }}>{student.idNumber}</td>
-                              <td style={{ padding: '8px', fontSize: '13px', fontWeight: 600, textAlign: 'right', color: '#2563eb' }}>
-                                {student.score === null || student.totalPoints === null 
-                                  ? '—' 
-                                  : `${student.score}/${student.totalPoints}`}
-                              </td>
-                              <td style={{ padding: '8px', fontSize: '12px', color: '#6b7280' }}>
-                                {student.submittedAt ? new Date(student.submittedAt).toLocaleDateString() : '—'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+              <div>
+                {/* Summary Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                  <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '16px' }}>
+                    <div style={{ fontSize: '12px', color: '#1e40af', fontWeight: 600, marginBottom: '4px' }}>Total Assignments</div>
+                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#1e40af' }}>{getFilteredAssignmentScoresData().length}</div>
+                  </div>
+                  <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', padding: '16px' }}>
+                    <div style={{ fontSize: '12px', color: '#92400e', fontWeight: 600, marginBottom: '4px' }}>Avg Score</div>
+                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#92400e' }}>
+                      {getFilteredAssignmentScoresData().length > 0
+                        ? Math.round(
+                            getFilteredAssignmentScoresData().reduce((sum, a) => {
+                              const total = a.studentScores.reduce((s, st) => s + (st.score || 0), 0);
+                              const count = a.studentScores.filter(st => st.score !== null).length;
+                              return sum + (count > 0 ? total / count : 0);
+                            }, 0) / getFilteredAssignmentScoresData().length
+                          )
+                        : 0}%
                     </div>
                   </div>
-                ))}
+                  <div style={{ background: '#dbeafe', border: '1px solid #7dd3fc', borderRadius: '8px', padding: '16px' }}>
+                    <div style={{ fontSize: '12px', color: '#0369a1', fontWeight: 600, marginBottom: '4px' }}>Graded</div>
+                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#0369a1' }}>
+                      {getFilteredAssignmentScoresData().reduce((sum, a) => sum + a.studentScores.filter(s => s.score !== null).length, 0)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assignments Summary Table */}
+                <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '14px', fontWeight: 600 }}>Assignment</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '14px', fontWeight: 600 }}>Lesson</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>Submissions</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>Avg Score</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>High / Low</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getFilteredAssignmentScoresData().map((assignment, idx) => {
+                        const scores = assignment.studentScores
+                          .filter(s => s.score !== null)
+                          .map(s => (s.score / s.totalPoints) * 100);
+                        const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+                        const maxScore = scores.length > 0 ? Math.max(...scores) : 0;
+                        const minScore = scores.length > 0 ? Math.min(...scores) : 0;
+
+                        return (
+                          <tr key={idx} style={{
+                            borderBottom: idx < getFilteredAssignmentScoresData().length - 1 ? '1px solid #e5e7eb' : 'none',
+                            background: idx % 2 === 0 ? '#fff' : '#f9fafb',
+                          }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 500 }}>{assignment.assignment}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '14px', color: '#6b7280' }}>{assignment.lesson || 'N/A'}</td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                              <span style={{ background: '#e0e7ff', color: '#3730a3', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                                {assignment.studentScores.filter(s => s.score !== null).length}/{assignment.studentScores.length}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                              <div style={{ fontSize: 14, fontWeight: 600, color: avgScore >= 75 ? '#16a34a' : avgScore >= 50 ? '#f59e0b' : '#dc2626' }}>
+                                {avgScore}%
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '13px', color: '#6b7280' }}>
+                              {Math.round(maxScore)}% / {Math.round(minScore)}%
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Detailed Assignment Scores by Student */}
+                <div style={{ marginTop: '24px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Detailed Student Scores</h3>
+                  {getFilteredAssignmentScoresData().map((assignment, aIdx) => (
+                    <div key={aIdx} style={{ marginBottom: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+                      <div style={{ background: '#f3f4f6', padding: '12px 16px', fontWeight: 600, borderBottom: '1px solid #e5e7eb' }}>
+                        {assignment.assignment}
+                        <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px', fontWeight: 400 }}>
+                          ({assignment.totalPoints} points)
+                        </span>
+                      </div>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ background: '#fafafa', borderBottom: '1px solid #e5e7eb' }}>
+                              <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '12px', fontWeight: 600 }}>Student</th>
+                              <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '12px', fontWeight: 600 }}>ID</th>
+                              <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>Score</th>
+                              <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>%</th>
+                              <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>Submitted</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {assignment.studentScores.map((student, sIdx) => {
+                              const percentage = student.score !== null && student.totalPoints > 0 
+                                ? Math.round((student.score / student.totalPoints) * 100)
+                                : null;
+                              const statusColor = percentage === null ? '#d1d5db' : percentage >= 75 ? '#10b981' : percentage >= 50 ? '#f59e0b' : '#ef4444';
+                              
+                              return (
+                                <tr key={sIdx} style={{ borderBottom: '1px solid #f3f4f6', background: sIdx % 2 === 0 ? '#fff' : '#fafafa' }}>
+                                  <td style={{ padding: '10px 12px', fontSize: '12px', fontWeight: 500 }}>
+                                    {student.firstName} {student.lastName}
+                                  </td>
+                                  <td style={{ padding: '10px 12px', fontSize: '12px', color: '#6b7280' }}>
+                                    {student.idNumber}
+                                  </td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>
+                                    {student.score === null ? '—' : `${student.score}/${student.totalPoints}`}
+                                  </td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                    <span style={{ 
+                                      background: statusColor + '20', 
+                                      color: statusColor, 
+                                      padding: '3px 6px', 
+                                      borderRadius: '3px', 
+                                      fontWeight: 600, 
+                                      fontSize: '12px'
+                                    }}>
+                                      {percentage === null ? '—' : `${percentage}%`}
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', color: '#6b7280' }}>
+                                    {student.submittedAt ? new Date(student.submittedAt).toLocaleDateString() : '—'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -819,13 +1402,15 @@ const TeacherProgressReport = ({ user }) => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '16px',
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
             }}>
               <div>
                 <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'white' }}>Student Performance Overview</h2>
-                <p style={{ fontSize: '13px', margin: '4px 0 0 0', opacity: 0.9, color: 'white' }}>View and manage student grades with final performance scores</p>
+                <p style={{ fontSize: '13px', margin: '4px 0 0 0', opacity: 0.9, color: 'white' }}>View grades, assignments, and manage manual overrides</p>
               </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 {saveStatus && (
                   <div style={{
                     padding: '8px 12px',
@@ -878,7 +1463,7 @@ const TeacherProgressReport = ({ user }) => {
                   onMouseEnter={(e) => e.target.style.background = '#059669'}
                   onMouseLeave={(e) => e.target.style.background = '#10b981'}
                 >
-                  📊 Export All Data
+                  📊 Export to CSV
                 </button>
               </div>
             </div>
@@ -886,7 +1471,7 @@ const TeacherProgressReport = ({ user }) => {
             {studentActivityData.length === 0 ? (
               <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>No students available</div>
             ) : (
-              <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+              <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                     <tr style={{ background: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
@@ -895,10 +1480,10 @@ const TeacherProgressReport = ({ user }) => {
                       
                       {/* Assignment Score Headers */}
                       {Array.from(new Set(
-                        assignmentScoresData.flatMap(a => a.studentScores.map(() => a.assignment))
-                      )).map((assignmentName, idx) => (
-                        <th key={idx} style={{ padding: '14px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 700, color: '#1f2937', minWidth: '90px', background: '#f0f9ff', borderBottom: '2px solid #e5e7eb' }}>
-                          {assignmentName}
+                        assignmentScoresData.flatMap(a => a.assignment)
+                      )).sort().map((assignmentName, idx) => (
+                        <th key={idx} style={{ padding: '14px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 700, color: '#1f2937', minWidth: '80px', background: '#f0f9ff', borderBottom: '2px solid #e5e7eb' }}>
+                          {assignmentName.substring(0, 15)}
                         </th>
                       ))}
                       
@@ -910,8 +1495,8 @@ const TeacherProgressReport = ({ user }) => {
                     {(() => {
                       const performanceData = calculateStudentPerformance();
                       const allAssignmentNames = Array.from(new Set(
-                        assignmentScoresData.flatMap(a => a.studentScores.map(() => a.assignment))
-                      ));
+                        assignmentScoresData.flatMap(a => a.assignment)
+                      )).sort();
                       
                       return performanceData.map((student, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb', background: idx % 2 === 0 ? '#fff' : '#fafafa', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = idx % 2 === 0 ? '#f3f4f6' : '#f3f4f6'} onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#fafafa'}>
@@ -924,9 +1509,21 @@ const TeacherProgressReport = ({ user }) => {
                           
                           {/* Individual Assignment Scores */}
                           {allAssignmentNames.map((assignmentName, aIdx) => {
-                            const score = student.assignmentScores.find(s => s.assignmentName === assignmentName);
+                            const assignmentObj = assignmentScoresData.find(a => a.assignment === assignmentName);
+                            const score = assignmentObj?.studentScores.find(s => s._id === student._id);
+                            const percentage = score && score.score !== null && score.totalPoints 
+                              ? Math.round((score.score / score.totalPoints) * 100)
+                              : null;
+                            
                             return (
-                              <td key={aIdx} style={{ padding: '14px 12px', textAlign: 'center', fontSize: '12px', background: '#f0f9ff', color: '#1f2937', fontWeight: 500 }}>
+                              <td key={aIdx} style={{ 
+                                padding: '14px 12px', 
+                                textAlign: 'center', 
+                                fontSize: '12px', 
+                                background: '#f0f9ff', 
+                                color: '#1f2937', 
+                                fontWeight: 500 
+                              }}>
                                 {score ? (
                                   score.score === null || score.totalPoints === null 
                                     ? '—' 
@@ -976,7 +1573,7 @@ const TeacherProgressReport = ({ user }) => {
                             fontWeight: 700,
                             color: student.statusColor
                           }}>
-                            {student.finalGrade !== null ? `${student.finalGrade}%` : '—'}
+                            {manualGradeOverrides[student._id] !== undefined ? `${manualGradeOverrides[student._id]}%` : (student.finalGrade !== null ? `${student.finalGrade}%` : '—')}
                           </td>
                         </tr>
                       ));

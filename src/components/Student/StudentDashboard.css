@@ -569,7 +569,7 @@ body, .classroom-main {
 main.classroom-main {
   flex: 1;
   padding: 24px;
-  padding-top: 88px;
+  padding-top: 24px;
   max-width: 100%;
   margin: 0;
   margin-left: 280px;

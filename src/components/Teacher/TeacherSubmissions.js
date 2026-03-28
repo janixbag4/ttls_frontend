@@ -8,6 +8,8 @@ const apiBase = process.env.REACT_APP_API_URL + '/api';
 
 const TeacherSubmissions = ({ user }) => {
   const [assignments, setAssignments] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [lessons, setLessons] = useState([]);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [statistics, setStatistics] = useState(null);
@@ -23,10 +25,16 @@ const TeacherSubmissions = ({ user }) => {
   const [showPreviousSubmission, setShowPreviousSubmission] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedModuleFilter, setSelectedModuleFilter] = useState('all');
+  const [selectedLessonFilter, setSelectedLessonFilter] = useState('all');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const token = localStorage.getItem('token');
 
   useEffect(() => {
     fetchAssignments();
+    fetchModules();
+    fetchLessons();
   }, []);
 
   const fetchAssignments = async () => {
@@ -38,6 +46,32 @@ const TeacherSubmissions = ({ user }) => {
       if (json.success) setAssignments(json.data || []);
     } catch (err) {
       console.error('Failed to fetch assignments', err);
+    }
+  };
+
+  const fetchModules = async () => {
+    try {
+      const res = await fetch(`${apiBase}/modules`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) setModules(json.data || []);
+    } catch (err) {
+      console.error('Failed to fetch modules', err);
+    }
+  };
+
+  const fetchLessons = async () => {
+    try {
+      const res = await fetch(`${apiBase}/lessons`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) {
+        setLessons(json.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch lessons', err);
     }
   };
 
@@ -349,6 +383,71 @@ const TeacherSubmissions = ({ user }) => {
     }
   };
 
+  // Get modules filtered by category
+  const getModulesByCategory = () => {
+    if (selectedCategoryFilter === 'all') {
+      return modules;
+    }
+    return modules.filter(m => m.category === selectedCategoryFilter);
+  };
+
+  // Filter assignments based on module and lesson selections and search
+  const getFilteredAssignments = () => {
+    const filtered = assignments.filter(assignment => {
+      // Filter by search term (case-insensitive)
+      if (searchTerm.trim()) {
+        const titleMatch = assignment.title?.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!titleMatch) {
+          return false;
+        }
+      }
+
+      // Filter by module
+      if (selectedModuleFilter !== 'all') {
+        const moduleId = assignment.lesson?.module?._id;
+        if (moduleId !== selectedModuleFilter) {
+          return false;
+        }
+      }
+
+      // Filter by lesson
+      if (selectedLessonFilter !== 'all') {
+        const lessonId = assignment.lesson?._id;
+        if (lessonId !== selectedLessonFilter) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+    
+    // Sort by assignment title A-Z
+    return filtered.sort((a, b) => 
+      (a.title || '').localeCompare(b.title || '')
+    );
+  };
+
+  // Get unique Module/Lesson combinations from modules and lessons
+  // Get lessons for the selected module
+  const getLessonsForModule = () => {
+    if (selectedModuleFilter === 'all') {
+      // Return only lessons that have a module
+      return lessons.filter(l => l.module && (l.module._id || l.module));
+    }
+    
+    const filtered = lessons.filter(lesson => {
+      // Only include lessons that have a module
+      if (!lesson.module) return false;
+      
+      const lessonModuleId = lesson.module?._id || lesson.module;
+      return lessonModuleId === selectedModuleFilter;
+    });
+    
+    return filtered;
+  };
+
+  const filteredAssignments = getFilteredAssignments();
+
   return (
     <div className="classroom-main">
       {/* Top Bar */}
@@ -363,7 +462,146 @@ const TeacherSubmissions = ({ user }) => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', marginTop: '24px' }}>
+      {/* Filter Section */}
+      <div style={{
+        display: 'flex',
+        gap: '16px',
+        marginTop: '24px',
+        marginBottom: '24px',
+        flexWrap: 'wrap',
+        alignItems: 'center'
+      }}>
+        {/* Search by Name */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '0 1 250px' }}>
+          <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Search Name:</label>
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              fontWeight: '500',
+              width: '100%'
+            }}
+          />
+        </div>
+
+        {/* Filter by Category */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '0 1 200px' }}>
+          <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Type:</label>
+          <select
+            value={selectedCategoryFilter}
+            onChange={(e) => {
+              setSelectedCategoryFilter(e.target.value);
+              setSelectedModuleFilter('all');
+              setSelectedLessonFilter('all');
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              width: '100%'
+            }}
+          >
+            <option value="all">All Types</option>
+            <option value="e-module">E-Module</option>
+            <option value="advanced-ttl">Advanced TTL</option>
+          </select>
+        </div>
+
+        {/* Filter by Module */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '0 1 250px' }}>
+          <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Module:</label>
+          <select
+            value={selectedModuleFilter}
+            onChange={(e) => {
+              setSelectedModuleFilter(e.target.value);
+              setSelectedLessonFilter('all');
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              width: '100%'
+            }}
+          >
+            <option value="all">All Modules</option>
+            {getModulesByCategory().map(m => (
+              <option key={m._id} value={m._id}>Module {m.moduleNumber}: {m.title}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Filter by Lesson */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '0 1 250px' }}>
+          <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Lesson:</label>
+          <select
+            value={selectedLessonFilter}
+            onChange={(e) => setSelectedLessonFilter(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              width: '100%'
+            }}
+            disabled={selectedModuleFilter === 'all'}
+          >
+            <option value="all">All Lessons</option>
+            {getLessonsForModule().map(l => (
+              <option key={l._id} value={l._id}>{l.title}</option>
+            ))}
+          </select>
+        </div>
+
+        {(searchTerm.trim() !== '' || selectedModuleFilter !== 'all' || selectedLessonFilter !== 'all' || selectedCategoryFilter !== 'all') && (
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedCategoryFilter('all');
+              setSelectedModuleFilter('all');
+              setSelectedLessonFilter('all');
+            }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--hover-bg)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--active-bg)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--hover-bg)'}
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px' }}>
         {/* Left: Assignment List */}
         <div>
           <div style={{
@@ -374,11 +612,11 @@ const TeacherSubmissions = ({ user }) => {
             textTransform: 'uppercase',
             letterSpacing: '0.5px'
           }}>
-            Outputs ({assignments.length})
+            Outputs ({filteredAssignments.length})
           </div>
-          {assignments.length === 0 ? (
+          {filteredAssignments.length === 0 ? (
             <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 14 }}>
-              No assignments created yet.
+              {assignments.length === 0 ? 'No assignments created yet.' : 'No assignments match the selected filters.'}
             </div>
           ) : (
             <div style={{ 
@@ -388,7 +626,7 @@ const TeacherSubmissions = ({ user }) => {
               overflow: 'hidden',
               boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
             }}>
-              {assignments.map((a) => (
+              {filteredAssignments.map((a) => (
                 <div
                   key={a._id}
                   onClick={() => handleSelectAssignment(a)}
