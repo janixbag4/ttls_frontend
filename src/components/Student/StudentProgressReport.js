@@ -7,12 +7,18 @@ const StudentProgressReport = ({ user }) => {
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [lessons, setLessons] = useState([]);
+  const [modules, setModules] = useState([]);
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('assignments'); // 'assignments', 'lessons'
   const [assignmentData, setAssignmentData] = useState([]);
   const [lessonData, setLessonData] = useState([]);
   const [sortOrder, setSortOrder] = useState('highest'); // 'highest', 'lowest'
+  const [sortByName, setSortByName] = useState('asc'); // 'asc', 'desc'
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedModuleFilter, setSelectedModuleFilter] = useState('all');
+  const [selectedLessonFilter, setSelectedLessonFilter] = useState('all');
+  const [selectedModuleType, setSelectedModuleType] = useState('all'); // 'e-module', 'advanced-ttl', or 'all'
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -30,14 +36,35 @@ const StudentProgressReport = ({ user }) => {
       const assignmentsJson = await assignmentsRes.json();
       if (assignmentsJson.success) setAssignments(assignmentsJson.data || []);
 
+      // Fetch modules
+      const modulesRes = await fetch(`${apiBase}/modules`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const modulesJson = await modulesRes.json();
+      if (modulesJson.success) setModules(modulesJson.data || []);
+
+      // Fetch lessons
+      const lessonsRes = await fetch(`${apiBase}/lessons`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const lessonsJson = await lessonsRes.json();
+      if (lessonsJson.success) setLessons(lessonsJson.data || []);
+
       // Fetch student submissions
       const submissionsRes = await fetch(`${apiBase}/assignments/submissions/student`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const submissionsJson = await submissionsRes.json();
-      if (submissionsJson.success) {
+      
+      // Now process with all fetched data
+      if (submissionsJson.success && assignmentsJson.success && lessonsJson.success && modulesJson.success) {
         setSubmissions(submissionsJson.data || []);
-        processAssignmentData(submissionsJson.data || [], assignmentsJson.data || []);
+        processAssignmentData(
+          submissionsJson.data || [], 
+          assignmentsJson.data || [],
+          lessonsJson.data || [],
+          modulesJson.data || []
+        );
       }
 
       // Fetch lessons with completion status from LessonView (same source as dashboard)
@@ -91,7 +118,7 @@ const StudentProgressReport = ({ user }) => {
     setLessonData({ completed, inProgress, notStarted, total: lessonDataWithStatus.length });
   };
 
-  const processAssignmentData = (submissionList, assignmentsList) => {
+  const processAssignmentData = (submissionList, assignmentsList, lessonsList = lessons, modulesList = modules) => {
     // Helper function to get ID from either populated object or string
     const getId = (field) => {
       if (!field) return null;
@@ -103,6 +130,23 @@ const StudentProgressReport = ({ user }) => {
     const data = submissionList.map(submission => {
       const assignmentId = getId(submission.assignment);
       const assignment = assignmentsList.find(a => a._id.toString() === assignmentId);
+      const lessonId = getId(assignment?.lesson);
+      let lesson = lessonsList.find(l => l._id.toString() === lessonId);
+      
+      // If lesson not found by direct ID, search through all lessons for assignments array
+      if (!lesson) {
+        lesson = lessonsList.find(l => 
+          l.assignments?.includes(assignmentId) || 
+          l.assignmentIds?.includes(assignmentId) ||
+          l.assignments?.some(a => getId(a) === assignmentId)
+        );
+      }
+      
+      // Get module ID - converting to string for consistent comparison
+      const moduleIdRaw = lesson?.module?._id || lesson?.module;
+      const moduleIdStr = moduleIdRaw ? (typeof moduleIdRaw === 'object' ? moduleIdRaw.toString() : moduleIdRaw) : null;
+      const module = moduleIdStr ? modulesList.find(m => m._id.toString() === moduleIdStr) : null;
+      
       return {
         assignmentId: submission.assignment._id,
         assignmentTitle: (typeof submission.assignment === 'object' ? submission.assignment.title : submission.assignment) || 'Unknown',
@@ -111,7 +155,13 @@ const StudentProgressReport = ({ user }) => {
         totalPoints: submission.totalPoints || assignment?.totalPoints || 100,
         isGraded: submission.isGraded,
         submittedAt: submission.submittedAt,
-        dueDate: assignment?.dueDate
+        dueDate: assignment?.dueDate,
+        lessonId: lesson?._id?.toString() || null,
+        lessonTitle: lesson?.title || 'Unknown',
+        moduleId: moduleIdStr,
+        moduleName: module?.title || 'Unknown',
+        moduleNumber: module?.moduleNumber,
+        moduleCategory: module?.category || 'e-module'
       };
     });
 
@@ -149,13 +199,70 @@ const StudentProgressReport = ({ user }) => {
     setLessonData({ completed, notStarted, inProgress, total: data.length });
   };
 
+  // Get lessons for the selected module
+  const getLessonsForModule = () => {
+    if (selectedModuleFilter === 'all') {
+      return lessons.filter(l => l.module && (l.module._id || l.module));
+    }
+    
+    const filtered = lessons.filter(lesson => {
+      if (!lesson.module) return false;
+      const lessonModuleId = lesson.module?._id || lesson.module;
+      return lessonModuleId === selectedModuleFilter;
+    });
+    
+    return filtered;
+  };
+
+  // Filter assignments by search, module, and lesson
+  const getFilteredAssignments = () => {
+    let filtered = assignmentData;
+
+    // Search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(item => 
+        item.assignmentTitle?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Module type filter (e-module vs advanced-ttl)
+    if (selectedModuleType !== 'all') {
+      filtered = filtered.filter(item => item.moduleCategory === selectedModuleType);
+    }
+
+    // Module filter
+    if (selectedModuleFilter !== 'all') {
+      filtered = filtered.filter(item => 
+        item.moduleId === selectedModuleFilter
+      );
+    }
+
+    // Lesson filter  
+    if (selectedLessonFilter !== 'all') {
+      filtered = filtered.filter(item =>
+        item.lessonId === selectedLessonFilter
+      );
+    }
+
+    // Sort by name (A-Z or Z-A)
+    filtered = filtered.sort((a, b) => {
+      if (sortByName === 'asc') {
+        return a.assignmentTitle.localeCompare(b.assignmentTitle);
+      } else {
+        return b.assignmentTitle.localeCompare(a.assignmentTitle);
+      }
+    });
+
+    return filtered;
+  };
+
   if (loading) {
     return (
       <div style={{ padding: '48px', textAlign: 'center' }}>Loading your progress...</div>
     );
   }
 
-  const sortedAssignments = [...assignmentData].sort((a, b) => {
+  const sortedAssignments = [...getFilteredAssignments()].sort((a, b) => {
     if (sortOrder === 'highest') {
       return (b.score || 0) - (a.score || 0);
     } else {
@@ -215,6 +322,143 @@ const StudentProgressReport = ({ user }) => {
       {/* Assignment Scores Tab */}
       {activeTab === 'assignments' && (
         <div>
+          {/* Filter Section */}
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            padding: '12px',
+            backgroundColor: '#f9fafb',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            flexWrap: 'wrap',
+            alignItems: 'center'
+          }}>
+            {/* Search */}
+            <input
+              type="text"
+              placeholder="Search assignment..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                padding: '6px 10px',
+                borderRadius: '4px',
+                border: '1px solid #d1d5db',
+                fontSize: '12px',
+                flex: '0 1 180px'
+              }}
+            />
+
+            {/* Module Type Filter */}
+            <select
+              value={selectedModuleType}
+              onChange={(e) => {
+                setSelectedModuleType(e.target.value);
+                setSelectedModuleFilter('all');
+                setSelectedLessonFilter('all');
+              }}
+              style={{
+                padding: '6px 10px',
+                borderRadius: '4px',
+                border: '1px solid #d1d5db',
+                fontSize: '12px',
+                cursor: 'pointer',
+                flex: '0 1 120px'
+              }}
+            >
+              <option value="all">All Types</option>
+              <option value="e-module">E-Module</option>
+              <option value="advanced-ttl">Advanced TTL</option>
+            </select>
+            
+            {/* Module Filter */}
+            <select
+              value={selectedModuleFilter}
+              onChange={(e) => {
+                setSelectedModuleFilter(e.target.value);
+                setSelectedLessonFilter('all');
+              }}
+              style={{
+                padding: '6px 10px',
+                borderRadius: '4px',
+                border: '1px solid #d1d5db',
+                fontSize: '12px',
+                cursor: 'pointer',
+                flex: '0 1 150px',
+                opacity: selectedModuleType === 'all' ? 1 : 0.7
+              }}
+              disabled={selectedModuleType === 'all'}
+            >
+              <option value="all">All Modules</option>
+              {modules
+                .filter(m => selectedModuleType === 'all' || m.category === selectedModuleType)
+                .map(m => (
+                  <option key={m._id} value={m._id.toString()}>
+                    Module {m.moduleNumber}: {m.title}
+                  </option>
+                ))}
+            </select>
+
+            {/* Lesson Filter */}
+            <select
+              value={selectedLessonFilter}
+              onChange={(e) => setSelectedLessonFilter(e.target.value)}
+              style={{
+                padding: '6px 10px',
+                borderRadius: '4px',
+                border: '1px solid #d1d5db',
+                fontSize: '12px',
+                cursor: 'pointer',
+                flex: '0 1 150px'
+              }}
+              disabled={selectedModuleFilter === 'all'}
+            >
+              <option value="all">All Lessons</option>
+              {getLessonsForModule().map(l => (
+                <option key={l._id} value={l._id.toString()}>{l.title}</option>
+              ))}
+            </select>
+
+            {/* Sort by Name */}
+            <select
+              value={sortByName}
+              onChange={(e) => setSortByName(e.target.value)}
+              style={{
+                padding: '6px 10px',
+                borderRadius: '4px',
+                border: '1px solid #d1d5db',
+                fontSize: '12px',
+                cursor: 'pointer',
+                flex: '0 1 120px'
+              }}
+            >
+              <option value="asc">A → Z</option>
+              <option value="desc">Z → A</option>
+            </select>
+
+            {/* Clear Filters Button */}
+            {(searchTerm.trim() !== '' || selectedModuleType !== 'all' || selectedModuleFilter !== 'all' || selectedLessonFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedModuleType('all');
+                  setSelectedModuleFilter('all');
+                  setSelectedLessonFilter('all');
+                }}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '4px',
+                  border: '1px solid #d1d5db',
+                  background: '#f3f4f6',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 500
+                }}
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Your Assignment Scores</h2>
             <select
